@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Build and publish release zip
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-dev --classmap-authoritative --no-interaction --prefer-dist
+
+      - name: Build plugin zip
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          ZIP_NAME="wp-mcp-plugin-${VERSION}.zip"
+
+          cd ..
+          PROJECT_DIR="wp-mcp-plugin"
+
+          # Create zip with the plugin directory as the root inside the archive.
+          # .gitattributes export-ignore rules are applied by git archive.
+          # We also exclude CI/dev files that aren't covered by export-ignore.
+          zip -r "${ZIP_NAME}" "${PROJECT_DIR}" \
+            -x "${PROJECT_DIR}/.git/*" \
+            -x "${PROJECT_DIR}/.github/*" \
+            -x "${PROJECT_DIR}/.gitignore" \
+            -x "${PROJECT_DIR}/.gitattributes" \
+            -x "${PROJECT_DIR}/composer.json" \
+            -x "${PROJECT_DIR}/composer.lock"
+
+          echo "Created: ${ZIP_NAME}"
+          ls -lh "${ZIP_NAME}"
+
+          # Move zip back to workspace for upload.
+          mv "${ZIP_NAME}" "${GITHUB_WORKSPACE}/"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: v${{ steps.version.outputs.VERSION }}
+          tag_name: ${{ github.ref_name }}
+          body: |
+            ## WP MCP Plugin v${{ steps.version.outputs.VERSION }}
+
+            Download the plugin zip below and install it via WordPress Admin > Plugins > Add New > Upload Plugin.
+
+            ### Installation
+            1. Install and activate [Elementor](https://wordpress.org/plugins/elementor/)
+            2. Upload and activate this plugin
+            3. Go to Settings > WP MCP to configure
+          files: wp-mcp-plugin-${{ steps.version.outputs.VERSION }}.zip
+          fail_on_unmatched_files: true

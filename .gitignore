@@ -1,6 +1,26 @@
 # OS noise
 .DS_Store
 Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# Editor / IDE
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
 
 # Dev/test artifacts
 *.log
+phpunit.xml
+.phpunit.result.cache
+
+vendor/
+
+# Composer dev-only files (lock file is committed for reproducibility;
+# vendor/ is intentionally committed — this is a drop-in plugin).
+# Do NOT add vendor/ here.
+composer.phar

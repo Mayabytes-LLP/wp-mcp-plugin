@@ -98,6 +98,46 @@ class Element {
 		update_post_meta( $post_id, '_elementor_data', wp_slash( wp_json_encode( $data ) ) );
 		delete_post_meta( $post_id, '_elementor_css' );
 		update_post_meta( $post_id, '_elementor_edit_mode', 'builder' );
+		self::ensure_elementor_meta( $post_id );
+	}
+
+	/**
+	 * Ensure all Elementor meta keys required for rendering are present.
+	 *
+	 * When Elementor's Document::save() runs, it sets _elementor_version,
+	 * _elementor_template_type, and _elementor_page_settings. Since we write
+	 * _elementor_data directly via update_post_meta (bypassing Document::save),
+	 * we must also set these keys or the page renders blank.
+	 *
+	 * @param int $post_id The post ID.
+	 */
+	public static function ensure_elementor_meta( int $post_id ): void {
+		// Set edit mode if not already set.
+		if ( ! get_post_meta( $post_id, '_elementor_edit_mode', true ) ) {
+			update_post_meta( $post_id, '_elementor_edit_mode', 'builder' );
+		}
+
+		// Set template type so Elementor identifies the document correctly.
+		if ( ! get_post_meta( $post_id, '_elementor_template_type', true ) ) {
+			update_post_meta( $post_id, '_elementor_template_type', 'wp-page' );
+		}
+
+		// Set version to current Elementor version so CSS generation works.
+		if ( ! get_post_meta( $post_id, '_elementor_version', true ) ) {
+			update_post_meta( $post_id, '_elementor_version', ELEMENTOR_VERSION );
+		}
+
+		// Ensure page settings exist (template, etc.) so the document renders.
+		$settings = get_post_meta( $post_id, '_elementor_page_settings', true );
+		if ( ! $settings || ! is_array( $settings ) ) {
+			$template = get_post_meta( $post_id, '_wp_page_template', true );
+			update_post_meta( $post_id, '_elementor_page_settings', array(
+				'template' => $template ?: 'default',
+			) );
+		}
+
+		// Invalidate CSS cache so Elementor regenerates styles.
+		delete_post_meta( $post_id, '_elementor_css' );
 	}
 
 	// ── add-container ─────────────────────────────────────────────────
@@ -107,7 +147,7 @@ class Element {
 
 		wp_register_ability( 'wp-mcp/add-container', array(
 			'label'             => __( 'Add Container', 'wp-mcp-plugin' ),
-			'description'       => __( 'IMPORTANT: Call the wp-mcp/usage-guide prompt before using this tool to understand Elementor\'s data model and avoid broken layouts. Add a new flex or grid container to an Elementor page. Containers are the building blocks of Elementor layouts — they hold widgets and can nest other containers. Specify a parent_id (or omit for top-level), position, and container settings.', 'wp-mcp-plugin' ),
+			'description'       => __( 'IMPORTANT: Call the usage-guide prompt before using this tool to understand Elementor\'s data model and avoid broken layouts. Add a new flex or grid container to an Elementor page. Containers are the building blocks of Elementor layouts — they hold widgets and can nest other containers. Specify a parent_id (or omit for top-level), position, and container settings.', 'wp-mcp-plugin' ),
 			'category'          => 'wp-mcp-plugin',
 			'execute_callback'  => array( $this, 'execute_add_container' ),
 			'permission_callback' => array( $this, 'check_edit_permission' ),
@@ -221,7 +261,7 @@ class Element {
 
 		wp_register_ability( 'wp-mcp/add-widget', array(
 			'label'             => __( 'Add Widget', 'wp-mcp-plugin' ),
-			'description'       => __( 'IMPORTANT: Call the wp-mcp/usage-guide prompt before using this tool to understand Elementor\'s data model and avoid broken layouts. Add a widget (any Elementor type) into a container. Use list-elementor-widgets to see available types and get-elementor-widget-schema to know which settings each widget accepts. Requires a parent container ID.', 'wp-mcp-plugin' ),
+			'description'       => __( 'IMPORTANT: Call the usage-guide prompt before using this tool to understand Elementor\'s data model and avoid broken layouts. Add a widget (any Elementor type) into a container. Use list-elementor-widgets to see available types and get-elementor-widget-schema to know which settings each widget accepts. Requires a parent container ID.', 'wp-mcp-plugin' ),
 			'category'          => 'wp-mcp-plugin',
 			'execute_callback'  => array( $this, 'execute_add_widget' ),
 			'permission_callback' => array( $this, 'check_edit_permission' ),
@@ -349,7 +389,7 @@ class Element {
 
 		wp_register_ability( 'wp-mcp/update-element', array(
 			'label'             => __( 'Update Element', 'wp-mcp-plugin' ),
-			'description'       => __( 'IMPORTANT: Call the wp-mcp/usage-guide prompt before using this tool to understand Elementor\'s data model and avoid broken layouts. Update settings on any element (container or widget) by its element ID. Settings are merged with existing ones — you only need to provide the properties you want to change.', 'wp-mcp-plugin' ),
+			'description'       => __( 'IMPORTANT: Call the usage-guide prompt before using this tool to understand Elementor\'s data model and avoid broken layouts. Update settings on any element (container or widget) by its element ID. Settings are merged with existing ones — you only need to provide the properties you want to change.', 'wp-mcp-plugin' ),
 			'category'          => 'wp-mcp-plugin',
 			'execute_callback'  => array( $this, 'execute_update_element' ),
 			'permission_callback' => array( $this, 'check_edit_permission' ),
@@ -426,7 +466,7 @@ class Element {
 
 		wp_register_ability( 'wp-mcp/remove-element', array(
 			'label'             => __( 'Remove Element', 'wp-mcp-plugin' ),
-			'description'       => __( 'IMPORTANT: Call the wp-mcp/usage-guide prompt before using this tool to understand Elementor\'s data model and avoid broken layouts. Remove an element (container or widget) and all its children from a page. This is destructive — removed content cannot be recovered.', 'wp-mcp-plugin' ),
+			'description'       => __( 'IMPORTANT: Call the usage-guide prompt before using this tool to understand Elementor\'s data model and avoid broken layouts. Remove an element (container or widget) and all its children from a page. This is destructive — removed content cannot be recovered.', 'wp-mcp-plugin' ),
 			'category'          => 'wp-mcp-plugin',
 			'execute_callback'  => array( $this, 'execute_remove_element' ),
 			'permission_callback' => array( $this, 'check_edit_permission' ),
@@ -494,7 +534,7 @@ class Element {
 
 		wp_register_ability( 'wp-mcp/batch-update', array(
 			'label'             => __( 'Batch Update Elements', 'wp-mcp-plugin' ),
-			'description'       => __( 'IMPORTANT: Call the wp-mcp/usage-guide prompt before using this tool to understand Elementor\'s data model and avoid broken layouts. Apply multiple element updates in a single save operation. Much more efficient than calling update-element repeatedly for large pages. Each operation in the array requires element_id and settings.', 'wp-mcp-plugin' ),
+			'description'       => __( 'IMPORTANT: Call the usage-guide prompt before using this tool to understand Elementor\'s data model and avoid broken layouts. Apply multiple element updates in a single save operation. Much more efficient than calling update-element repeatedly for large pages. Each operation in the array requires element_id and settings.', 'wp-mcp-plugin' ),
 			'category'          => 'wp-mcp-plugin',
 			'execute_callback'  => array( $this, 'execute_batch_update' ),
 			'permission_callback' => array( $this, 'check_edit_permission' ),

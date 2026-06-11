@@ -24,6 +24,19 @@ define( 'WP_MCP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WP_MCP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'WP_MCP_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
+/** Minimum required version of the WordPress MCP Adapter. */
+define( 'WP_MCP_MIN_ADAPTER_VERSION', '0.5.0' );
+
+/*
+ * Load the Jetpack Autoloader for dependency resolution.
+ *
+ * This coordinates with any other plugins that also use the Jetpack Autoloader
+ * to ensure the latest version of shared packages is loaded. If the MCP Adapter
+ * is already installed as a separate plugin with a compatible version, that
+ * version will be used. Otherwise, our vendored copy provides the dependency.
+ */
+require_once WP_MCP_PLUGIN_DIR . 'vendor/autoload_packages.php';
+
 /**
  * Check plugin dependencies and show admin notices if missing.
  *
@@ -38,6 +51,8 @@ function wp_mcp_check_dependencies(): array {
 
 	if ( ! class_exists( 'WP\MCP\Core\McpAdapter' ) ) {
 		$missing[] = 'mcp-adapter';
+	} elseif ( version_compare( \WP\MCP\Core\McpAdapter::VERSION, WP_MCP_MIN_ADAPTER_VERSION, '<' ) ) {
+		$missing[] = 'mcp-adapter-version';
 	}
 
 	return $missing;
@@ -47,23 +62,34 @@ function wp_mcp_check_dependencies(): array {
  * Display an admin notice for a missing dependency.
  */
 function wp_mcp_show_dependency_notice( string $slug ): void {
-	$names = array(
-		'elementor'    => 'Elementor',
-		'mcp-adapter'  => 'WordPress MCP Adapter',
+	$messages = array(
+		'elementor'           => sprintf(
+			/* translators: %s: dependency name */
+			esc_html__( '%1$s requires %2$s to be installed and activated. Please install %2$s to enable the MCP server.', 'wp-mcp-plugin' ),
+			'<strong>WP MCP Plugin</strong>',
+			'<strong>Elementor</strong>'
+		),
+		'mcp-adapter'         => sprintf(
+			/* translators: %s: dependency name */
+			esc_html__( '%1$s requires %2$s, but it could not be loaded. Please check that the plugin files are intact.', 'wp-mcp-plugin' ),
+			'<strong>WP MCP Plugin</strong>',
+			'<strong>WordPress MCP Adapter</strong>'
+		),
+		'mcp-adapter-version' => sprintf(
+			/* translators: 1: plugin name, 2: required version */
+			esc_html__( '%1$s requires %2$s. An older version is active — please update the MCP Adapter plugin or deactivate it so the bundled version can be used.', 'wp-mcp-plugin' ),
+			'<strong>WP MCP Plugin</strong>',
+			'<strong>WordPress MCP Adapter v' . esc_html( WP_MCP_MIN_ADAPTER_VERSION ) . '+</strong>'
+		),
 	);
 
-	$label = $names[ $slug ] ?? $slug;
+	$message = $messages[ $slug ] ?? sprintf(
+		esc_html__( '%1$s requires a missing dependency.', 'wp-mcp-plugin' ),
+		'<strong>WP MCP Plugin</strong>'
+	);
 
-	add_action( 'admin_notices', function () use ( $label, $slug ) {
-		printf(
-			'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
-			sprintf(
-				/* translators: 1: plugin name, 2: dependency name */
-				esc_html__( '%1$s requires %2$s to be installed and activated. Please install %2$s to enable the MCP server.', 'wp-mcp-plugin' ),
-				'<strong>WP MCP Plugin</strong>',
-				'<strong>' . esc_html( $label ) . '</strong>'
-			)
-		);
+	add_action( 'admin_notices', function () use ( $message ) {
+		printf( '<div class="notice notice-warning is-dismissible"><p>%s</p></div>', $message );
 	} );
 }
 
@@ -79,6 +105,14 @@ function wp_mcp_init(): void {
 		}
 		return;
 	}
+
+	/*
+	 * Initialize the MCP Adapter. If the standalone MCP Adapter plugin is
+	 * active, McpAdapter::instance() is already a no-op (singleton guard).
+	 * If not, our vendored copy provides the class and this call bootstraps
+	 * the REST routes and fires mcp_adapter_init.
+	 */
+	\WP\MCP\Core\McpAdapter::instance();
 
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-api-key.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-schema-generator.php';

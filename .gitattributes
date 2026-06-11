@@ -1,0 +1,9 @@
+# Export-ignore rules for release zip.
+# Files matched here are excluded from `git archive` and the release zip.
+
+# Dev / CI files (not shipped to end users)
+.gitattributes        export-ignore
+.gitignore            export-ignore
+.github/              export-ignore
+composer.json         export-ignore
+composer.lock         export-ignore

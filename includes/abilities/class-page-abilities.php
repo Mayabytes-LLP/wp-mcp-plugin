@@ -54,7 +54,7 @@ class Page {
 
 		wp_register_ability( 'wp-mcp/create-page', array(
 			'label'             => __( 'Create Page', 'wp-mcp-plugin' ),
-			'description'       => __( 'IMPORTANT: Call the wp-mcp/usage-guide prompt before using this tool to understand Elementor\'s data model and avoid broken layouts. Create a new WordPress page with Elementor builder enabled. Optionally set an initial title, slug, status, and template. Returns the new page ID and URL.', 'wp-mcp-plugin' ),
+			'description'       => __( 'IMPORTANT: Call the usage-guide prompt before using this tool to understand Elementor\'s data model and avoid broken layouts. Create a new WordPress page with Elementor builder enabled. Optionally set an initial title, slug, status, and template. Returns the new page ID and URL.', 'wp-mcp-plugin' ),
 			'category'          => 'wp-mcp-plugin',
 			'execute_callback'  => array( $this, 'execute_create_page' ),
 			'permission_callback' => array( $this, 'check_create_permission' ),
@@ -125,9 +125,6 @@ class Page {
 			return $post_id;
 		}
 
-		// Enable Elementor
-		update_post_meta( $post_id, '_elementor_edit_mode', 'builder' );
-
 		// Set template if specified
 		if ( ! empty( $template ) ) {
 			update_post_meta( $post_id, '_wp_page_template', $template );
@@ -137,6 +134,9 @@ class Page {
 		if ( ! empty( $input['initial_elementor_data'] ) && is_array( $input['initial_elementor_data'] ) ) {
 			update_post_meta( $post_id, '_elementor_data', wp_slash( wp_json_encode( $input['initial_elementor_data'] ) ) );
 		}
+
+		// Ensure all Elementor meta keys are present for rendering.
+		Element::ensure_elementor_meta( $post_id );
 
 		return array(
 			'post_id'  => $post_id,
@@ -152,7 +152,7 @@ class Page {
 
 		wp_register_ability( 'wp-mcp/update-page-elementor-data', array(
 			'label'             => __( 'Update Page Elementor Data', 'wp-mcp-plugin' ),
-			'description'       => __( 'IMPORTANT: Call the wp-mcp/usage-guide prompt before using this tool to understand Elementor\'s data model and avoid broken layouts. Replace the entire Elementor content (_elementor_data) of an existing page. The provided data must be a valid JSON array of Elementor elements (containers, widgets, etc.). This is a full replacement — previous content is overwritten.', 'wp-mcp-plugin' ),
+			'description'       => __( 'IMPORTANT: Call the usage-guide prompt before using this tool to understand Elementor\'s data model and avoid broken layouts. Replace the entire Elementor content (_elementor_data) of an existing page. The provided data must be a valid JSON array of Elementor elements (containers, widgets, etc.). This is a full replacement — previous content is overwritten.', 'wp-mcp-plugin' ),
 			'category'          => 'wp-mcp-plugin',
 			'execute_callback'  => array( $this, 'execute_update_page_data' ),
 			'permission_callback' => array( $this, 'check_edit_permission' ),
@@ -205,6 +205,9 @@ class Page {
 		// Invalidate Elementor CSS cache
 		delete_post_meta( $post_id, '_elementor_css' );
 
+		// Ensure all Elementor meta keys are present for rendering.
+		Element::ensure_elementor_meta( $post_id );
+
 		return array(
 			'success' => true,
 			'post_id' => $post_id,
@@ -216,7 +219,7 @@ class Page {
 
 		wp_register_ability( 'wp-mcp/delete-page', array(
 			'label'             => __( 'Delete Page', 'wp-mcp-plugin' ),
-			'description'       => __( 'IMPORTANT: Call the wp-mcp/usage-guide prompt before using this tool to understand Elementor\'s data model and avoid broken layouts. Trash a WordPress page. The page can be restored from trash within 30 days. Does not permanently delete.', 'wp-mcp-plugin' ),
+			'description'       => __( 'IMPORTANT: Call the usage-guide prompt before using this tool to understand Elementor\'s data model and avoid broken layouts. Trash a WordPress page. The page can be restored from trash within 30 days. Does not permanently delete.', 'wp-mcp-plugin' ),
 			'category'          => 'wp-mcp-plugin',
 			'execute_callback'  => array( $this, 'execute_delete_page' ),
 			'permission_callback' => array( $this, 'check_delete_permission' ),

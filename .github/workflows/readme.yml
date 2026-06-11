@@ -1,0 +1,147 @@
+name: Generate readme.txt
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'wp-mcp-plugin.php'
+      - 'includes/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-readme:
+    name: Generate WordPress plugin readme
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate readme.txt from plugin header
+        run: |
+          PLUGIN_FILE="wp-mcp-plugin.php"
+
+          # Extract header values using awk/sed.
+          get_header() {
+            grep -E "^ \\* $1:" "$PLUGIN_FILE" \
+              | sed "s/^ \\* $1:[[:space:]]*//" \
+              | sed 's/\s\+$//'
+          }
+
+          PLUGIN_NAME="$(get_header 'Plugin Name')"
+          DESCRIPTION="$(get_header 'Description' | head -1)"
+          VERSION="$(get_header 'Version')"
+          REQUIRES_WP="$(get_header 'Requires at least')"
+          TESTED_WP="$(get_header 'Tested up to')"
+          REQUIRES_PHP="$(get_header 'Requires PHP')"
+          LICENSE="$(get_header 'License')"
+          LICENSE_URI="$(get_header 'License URI')"
+
+          [ -z "$TESTED_WP" ] && TESTED_WP="$REQUIRES_WP"
+
+          # Normalise license slug for readme format.
+          case "$LICENSE" in
+            *GPL-2.0-or-later*|*GPLv2*|*GPL-2.0*)
+              README_LICENSE="GPLv2 or later"
+              README_LICENSE_URI="https://www.gnu.org/licenses/gpl-2.0.html"
+              ;;
+            *GPL-3.0-or-later*|*GPLv3*|*GPL-3.0*)
+              README_LICENSE="GPLv3 or later"
+              README_LICENSE_URI="https://www.gnu.org/licenses/gpl-3.0.html"
+              ;;
+            *MIT*)
+              README_LICENSE="MIT"
+              README_LICENSE_URI="https://opensource.org/licenses/MIT"
+              ;;
+            *)
+              README_LICENSE="${LICENSE:-GPLv2 or later}"
+              README_LICENSE_URI="${LICENSE_URI:-https://www.gnu.org/licenses/gpl-2.0.html}"
+              ;;
+          esac
+
+          # Build readme.txt line by line (avoids heredoc colons that confuse YAML parsers).
+          rm -f readme.txt
+
+          _w() { printf '%s\n' "$*" >> readme.txt; }
+          _e() { printf '\n' >> readme.txt; }
+
+          _w "=== ${PLUGIN_NAME} ==="
+          _w "Contributors: mayabytes"
+          _w "Tags: mcp, elementor, ai, figma, wordpress"
+          _w "Requires at least: ${REQUIRES_WP}"
+          _w "Tested up to: ${TESTED_WP}"
+          _w "Requires PHP: ${REQUIRES_PHP}"
+          _w "Stable tag: ${VERSION}"
+          _w "License: ${README_LICENSE}"
+          _w "License URI: ${README_LICENSE_URI}"
+          _e
+          _w "${DESCRIPTION}"
+          _e
+          _w "== Description =="
+          _e
+          _w "WP MCP Plugin bridges WordPress/Elementor and AI coding agents via the Model Context Protocol (MCP). It exposes Elementor pages, widgets, templates, and settings as MCP tools that AI agents can call to:"
+          _e
+          _w "* List and inspect Elementor pages"
+          _w "* Create, update, and delete pages"
+          _w "* Add containers and widgets with full schema validation"
+          _w "* Batch-update multiple elements at once"
+          _w "* Manage Elementor global settings"
+          _e
+          _w "The plugin requires both Elementor and the WordPress MCP Adapter. If the MCP Adapter is not installed as a standalone plugin, the bundled version is used automatically."
+          _e
+          _w "== Installation =="
+          _e
+          _w "1. Install and activate Elementor (https://wordpress.org/plugins/elementor/) (free or Pro)."
+          _w "2. Upload the wp-mcp-plugin folder to /wp-content/plugins/, or install the zip via WordPress Admin > Plugins > Add New > Upload Plugin."
+          _w "3. Activate the plugin through the Plugins menu."
+          _w "4. Go to Settings > WP MCP to configure your API key and enable the MCP server."
+          _w "5. Connect your MCP client (e.g. Claude Desktop, OpenCode) to the WordPress MCP server endpoint."
+          _e
+          _w "== Frequently Asked Questions =="
+          _e
+          _w "= Does this require Elementor Pro? ="
+          _e
+          _w "No, Elementor free is sufficient for basic page and widget operations. Elementor Pro adds templates and theme builder support."
+          _e
+          _w "= Do I need to install the MCP Adapter separately? ="
+          _e
+          _w "No. The plugin bundles the WordPress MCP Adapter via Composer. If you already have it as a standalone plugin, the newer version takes precedence automatically."
+          _e
+          _w "= Can I use this without an AI agent? ="
+          _e
+          _w "The plugin exposes MCP tools -- you need an MCP client to call them. The tools are registered as WordPress REST API endpoints so you can also call them directly with curl or any HTTP client."
+          _e
+          _w "== Changelog =="
+          _e
+          _w "= ${VERSION} ="
+          _w "* Initial release -- MCP server with Elementor page, widget, element, and settings tools."
+          _e
+          _w "== Upgrade Notice =="
+          _e
+          _w "= ${VERSION} ="
+          _w "Initial release."
+
+          echo "Generated readme.txt from plugin header."
+          echo "---"
+          head -15 readme.txt
+
+      - name: Commit readme.txt if changed
+        run: |
+          if ! git diff --quiet readme.txt; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add readme.txt
+            git commit -m "Auto-generate readme.txt from plugin header
+
+            [skip ci]"
+            git push
+            echo "Committed updated readme.txt"
+          else
+            echo "readme.txt unchanged -- nothing to commit"
+          fi

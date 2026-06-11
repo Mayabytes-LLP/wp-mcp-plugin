@@ -1,0 +1,19 @@
+{
+    "name": "mayabytes/wp-mcp-plugin",
+    "description": "Exposes WordPress + Elementor as an MCP server so AI coding agents can read Figma designs and generate Elementor pages through MCP tools.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": ">=8.0",
+        "wordpress/mcp-adapter": "^0.5.0",
+        "automattic/jetpack-autoloader": "^2.11"
+    },
+    "config": {
+        "platform": {
+            "php": "8.0"
+        },
+        "allow-plugins": {
+            "automattic/jetpack-autoloader": true
+        }
+    }
+}
