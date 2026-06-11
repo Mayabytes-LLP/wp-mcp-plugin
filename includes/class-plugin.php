@@ -47,6 +47,13 @@ class Plugin {
 		// Admin bar indicator
 		add_action( 'admin_bar_menu', array( $this->admin_page, 'add_admin_bar_node' ), 100 );
 
+		// Prevent mcp-adapter from creating its default server (which needs
+		// built-in abilities registered at init:20). We create our own server
+		// with our own abilities — the default server would fail with
+		// "ability does not exist" errors since our hook ordering causes
+		// wp_abilities_api_init to fire before those abilities are registered.
+		add_filter( 'mcp_adapter_create_default_server', '__return_false' );
+
 		// MCP Adapter hooks
 		add_action( 'wp_abilities_api_categories_init', array( $this, 'register_category' ) );
 		add_action( 'wp_abilities_api_init', array( $this, 'register_abilities' ) );
@@ -70,6 +77,16 @@ class Plugin {
 	}
 
 	public function register_mcp_server( $adapter ): void {
+		// Ensure abilities are registered before we reference them.
+		// wp_abilities_api_init is a lazy hook that fires when
+		// WP_Abilities_Registry::get_instance() is first called.
+		// During REST API requests, mcp_adapter_init fires before
+		// wp_abilities_api_init has been triggered, so we force
+		// the registry to initialize here. This triggers the hook,
+		// which calls our register_abilities() and populates
+		// $this->ability_names before we use it below.
+		\WP_Abilities_Registry::get_instance();
+
 		$server_enabled = (bool) get_option( 'wp_mcp_server_enabled', true );
 		if ( ! $server_enabled ) {
 			return;

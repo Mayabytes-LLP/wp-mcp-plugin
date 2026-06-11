@@ -79,6 +79,8 @@ class ApiKey {
 	 * Transport permission callback for the MCP server.
 	 *
 	 * Reads the X-WP-MCP-Key header and validates it against the stored hash.
+	 * On success, sets the current WordPress user to an administrator so the
+	 * mcp-adapter can create sessions (which requires a logged-in user).
 	 *
 	 * @param \WP_REST_Request|null $request The incoming REST request.
 	 * @return bool|\WP_Error True if authenticated, WP_Error on failure.
@@ -111,6 +113,36 @@ class ApiKey {
 			);
 		}
 
+		// Authenticate as an admin user so mcp-adapter can create sessions.
+		// get_current_user_id() must return non-zero for session creation to succeed.
+		$admin_id = $this->get_admin_user_id();
+		if ( $admin_id ) {
+			wp_set_current_user( $admin_id );
+		}
+
 		return true;
+	}
+
+	/**
+	 * Find an administrator user ID for MCP authentication.
+	 *
+	 * @return int User ID, or 0 if no admin found.
+	 */
+	private function get_admin_user_id(): int {
+		$users = get_users(
+			array(
+				'role'    => 'administrator',
+				'number'  => 1,
+				'orderby' => 'ID',
+				'order'   => 'ASC',
+				'fields'  => 'ID',
+			)
+		);
+
+		if ( ! empty( $users ) ) {
+			return (int) $users[0];
+		}
+
+		return 0;
 	}
 }

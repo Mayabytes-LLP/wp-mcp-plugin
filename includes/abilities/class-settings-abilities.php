@@ -24,7 +24,7 @@ class Settings {
 		return $this->ability_names;
 	}
 
-	private function check_settings_permission(): bool {
+	public function check_settings_permission(): bool {
 		return current_user_can( 'manage_options' );
 	}
 
@@ -33,7 +33,7 @@ class Settings {
 
 		wp_register_ability( 'wp-mcp/update-elementor-global-settings', array(
 			'label'             => __( 'Update Elementor Global Settings', 'wp-mcp-plugin' ),
-			'description'       => __( 'Update the active Elementor kit\'s global design settings: custom colors and typography. Use get-elementor-global-settings first to see the current state.', 'wp-mcp-plugin' ),
+			'description'       => __( 'IMPORTANT: Call the wp-mcp/usage-guide prompt before using this tool to understand Elementor\'s data model and avoid broken layouts. Update the active Elementor kit\'s global design settings: custom colors and typography. Use get-elementor-global-settings first to see the current state.', 'wp-mcp-plugin' ),
 			'category'          => 'wp-mcp-plugin',
 			'execute_callback'  => array( $this, 'execute_update_global_settings' ),
 			'permission_callback' => array( $this, 'check_settings_permission' ),

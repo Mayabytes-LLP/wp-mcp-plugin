@@ -37,7 +37,7 @@ class Query {
 		return $this->ability_names;
 	}
 
-	private function check_read_permission(): bool {
+	public function check_read_permission(): bool {
 		return current_user_can( 'edit_posts' );
 	}
 
@@ -391,8 +391,8 @@ class Query {
 				'properties' => array(
 					'colors'       => array( 'type' => 'array' ),
 					'typography'   => array( 'type' => 'array' ),
-					'container_width' => array( 'type' => 'object' ),
-					'breakpoints'  => array( 'type' => 'object' ),
+					'container_width' => array( 'type' => array( 'object', 'null' ) ),
+					'breakpoints'  => array( 'type' => array( 'object', 'null' ) ),
 				),
 			),
 			'meta'              => array(

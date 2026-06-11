@@ -71,7 +71,7 @@ class Registrar {
 
 		wp_register_ability( 'wp-mcp/usage-guide', array(
 			'label'             => __( 'Usage Guide', 'wp-mcp-plugin' ),
-			'description'       => __( 'Comprehensive guide on how to use the WP MCP Plugin tools for Elementor page building.', 'wp-mcp-plugin' ),
+			'description'       => __( 'MANDATORY: Call this prompt before using any write tool. Comprehensive guide covering Elementor data model, widget schemas, container rules, and common pitfalls. Ignoring this guide will produce broken layouts.', 'wp-mcp-plugin' ),
 			'category'          => 'wp-mcp-plugin',
 			'execute_callback'  => function () use ( $guide_content ) {
 				return array(
@@ -79,10 +79,8 @@ class Registrar {
 						array(
 							'role'    => 'user',
 							'content' => array(
-								array(
-									'type' => 'text',
-									'text' => $guide_content,
-								),
+								'type' => 'text',
+								'text' => $guide_content,
 							),
 						),
 					),

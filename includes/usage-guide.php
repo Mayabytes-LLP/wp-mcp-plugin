@@ -21,34 +21,36 @@ Use them to create and modify WordPress pages with Elementor.
 ## Tool Overview
 
 ### Read Tools (safe, no side effects)
-- `list-pages` — find existing pages by status or search
-- `get-page` — get a page's full Elementor data structure
-- `list-elementor-widgets` — see all available widget types and their keys
-- `get-elementor-widget-schema` — get the controllable properties for any widget
-- `list-elementor-templates` — see saved reusable templates
-- `get-elementor-global-settings` — read site-wide colors, typography, breakpoints
+
+| Tool | Purpose | Key Parameters |
+|------|---------|----------------|
+| `list-pages` | Find pages by status or search | `status` (default: `publish`; also `draft`, `pending`, `private`, `trash`, `any`), `search`, `per_page` (1–100, default 20), `page` (pagination) |
+| `get-page` | Get a page's full Elementor data | `post_id` (integer) OR `slug` (string) — either works |
+| `list-elementor-widgets` | See all available widget types | `category` (optional filter, e.g. `basic`, `general`, `pro-elements`) |
+| `get-elementor-widget-schema` | Get controllable properties for a widget | `widget_type` (required — e.g. `heading`, `button`) |
+| `list-elementor-templates` | List saved reusable templates | `type` (optional — `section`, `page`, `header`, `footer`, `single`, `archive`) |
+| `get-elementor-global-settings` | Read site-wide colors, typography, breakpoints | No parameters |
+| `get-plugin-status` | Check Elementor version, MCP adapter status, API key | No parameters |
 
 ### Write Tools (mutate the site)
-- `create-page` — create a new WordPress page
-- `update-page-elementor-data` — replace the entire Elementor content of a page
-- `delete-page` — trash a page
-- `add-container` — add a flex or grid container to a page
-- `add-widget` — add any widget type into a container
-- `update-element` — change settings on any element
-- `remove-element` — remove an element and all its children
-- `batch-update` — apply multiple element updates in one save
-- `update-elementor-global-settings` — update site-wide colors and typography
+
+| Tool | Purpose | Key Parameters |
+|------|---------|----------------|
+| `create-page` | Create a new WordPress page | `title` (default: "Untitled Page"), `slug`, `status` (default: `draft`; also `publish`, `pending`, `private`), `template` (e.g. `elementor_canvas`), `initial_elementor_data` (array of Elementor elements) |
+| `update-page-elementor-data` | **Replace** the entire Elementor content of a page | `post_id` (required), `elementor_data` (required — full JSON array) |
+| `delete-page` | Trash or permanently delete a page | `post_id` (required), `force` (default: `false`; `true` = permanent delete, skips trash) |
+| `add-container` | Add a flex or grid container | `post_id` (required), `parent_id` (default: `"root"` for top-level), `position` (default: `-1` = append), `settings` (object) |
+| `add-widget` | Add a widget into a container | `post_id` (required), `parent_id` (required — must be a container), `widget_type` (required), `position` (default: `-1` = append), `settings` (object) |
+| `update-element` | Change settings on any element (merges with existing) | `post_id` (required), `element_id` (required), `settings` (required — only provide changed properties) |
+| `remove-element` | Remove an element and all its children (destructive) | `post_id` (required), `element_id` (required) |
+| `batch-update` | Apply multiple element updates in one save | `post_id` (required), `operations` (required — array of `{element_id, settings}` objects) |
+| `update-elementor-global-settings` | Update site-wide colors and typography | `colors` (array of `{_id, title, color}`), `typography` (array of `{_id, title, typography_typography, ...}`) |
 
 ### Diagnostics
-- `get-plugin-status` — check if Elementor is active, server status, etc.
 
-## Widget Types and Keys
-
-Always use `list-elementor-widgets` first to see what's available. Common keys:
-- `heading`, `text-editor`, `image`, `button`, `video`, `icon`, `spacer`, `divider`
-- `icon-box`, `image-box`, `icon-list`, `counter`, `progress`, `testimonial`
-
-Get each widget's acceptable settings with `get-elementor-widget-schema`.
+| Tool | Returns |
+|------|---------|
+| `get-plugin-status` | `elementor_version`, `elementor_pro_version`, `mcp_adapter_active`, `api_key_configured`, `server_enabled`, `enabled_tools_count`, `plugin_version` |
 
 ## Elementor Data Structure
 
@@ -57,12 +59,12 @@ Elementor content is a JSON tree stored in `_elementor_data` post meta:
 ```json
 [
   {
-    "id": "abc1234",
+    "id": "a3f9c2b",
     "elType": "container",
     "settings": { "flex_direction": "column", "content_width": "boxed" },
     "elements": [
       {
-        "id": "def5678",
+        "id": "b7d1e4f",
         "elType": "widget",
         "widgetType": "heading",
         "settings": { "title": "Hello World", "header_size": "h1", "align": "center" },
@@ -75,34 +77,119 @@ Elementor content is a JSON tree stored in `_elementor_data` post meta:
 ```
 
 Key rules:
-- Top level is always an array of sections/containers
-- Each element has a unique `id` (7-char hex string)
-- `elType` is "container" or "widget"
+- Top level is always an array of containers
+- Element IDs are 7-char hex strings **auto-generated by the plugin** — do not create them yourself. Use the `element_id` returned from `add-container`/`add-widget` for subsequent `update-element` or `remove-element` calls
+- `elType` is `"container"` or `"widget"`
 - Containers nest via the `elements` array
-- Widget types use `widgetType` key
+- Widget types use the `widgetType` key
 - All design properties go in `settings`
+- `update-element` **merges** settings — only provide properties you want to change
+- `isInner` is set automatically based on nesting depth — you do not need to specify it
 
-## Container Nesting
+### Responsive Settings
 
-Elementor containers can nest:
+Responsive values use device suffixes. Set a base value, then override per breakpoint:
+
+```json
+{
+  "padding": { "unit": "px", "top": "80", "right": "0", "bottom": "80", "left": "0", "isLinked": false },
+  "padding_tablet": { "unit": "px", "top": "40", "right": "20", "bottom": "40", "left": "20", "isLinked": false },
+  "padding_mobile": { "unit": "px", "top": "24", "right": "16", "bottom": "24", "left": "16", "isLinked": false }
+}
 ```
-Container (flex, column) → Container (inner, horizontal) → Widget
-Container (flex, column) → Widget
+
+Default breakpoints: Mobile (<768px), Tablet (768–1024px), Desktop (1025px+).
+
+### Global Styles Reference
+
+When a widget uses global colors/typography, the `__globals__` key stores references:
+
+```json
+{
+  "settings": {
+    "__globals__": {
+      "title_color": "globals/colors?id=primary",
+      "typography_typography": "globals/typography?id=primary"
+    }
+  }
+}
 ```
 
-Use `add-container` with appropriate `flex_direction` and `content_width` settings.
-Set `isInner: true` for containers nested inside other containers.
+Always prefer global style references over hardcoded hex values to maintain consistency.
+
+## Container System
+
+### Flexbox vs Grid
+
+Use **flex containers** for one-dimensional layouts (row OR column):
+- Navigation bars, headers, footers
+- Centering content
+- Side-by-side layouts that wrap on mobile
+
+Use **grid containers** for two-dimensional layouts (rows AND columns):
+- Uniform multi-column feature grids (3×3, 4×2, etc.)
+- Photo galleries with equal cells
+- Magazine layouts with items spanning multiple columns
+
+### Container Settings
+
+These are the most common settings for `add-container`. Call `get-elementor-widget-schema` with widget type `container` for the complete list — Elementor has many more controls (borders, shadows, gradients, CSS filters, animations, responsive visibility, etc.) that aren't listed here.
+
+| Setting | Values | Purpose |
+|---------|--------|---------|
+| `flex_direction` | `column`, `row` | Layout direction |
+| `content_width` | `boxed`, `full` | Boxed centers content; full stretches edge-to-edge |
+| `flex_wrap` | `wrap`, `nowrap` | Whether children wrap to new lines |
+| `align_items` | `flex-start`, `center`, `flex-end`, `stretch` | Cross-axis alignment |
+| `justify_content` | `flex-start`, `center`, `flex-end`, `space-between`, `space-around`, `space-evenly` | Main-axis alignment |
+| `gap` | Dimensions object or string | Space between children |
+| `padding` | Dimensions object | Inner spacing |
+| `margin` | Dimensions object | Outer spacing |
+| `background_color` | Hex string | Background fill |
+| `background_image` | Media object | Background image |
+
+> **Default container padding is 10px on all sides.** This compounds when nesting. Always check and remove it when not needed by setting `padding` to `{"unit":"px","top":"0","right":"0","bottom":"0","left":"0","isLinked":false}`.
+
+### Nesting Rules
+
+Containers can nest, but **never exceed 3 levels deep**. Three levels is ideal:
+
+```
+Container (outer, column) → Container (inner, row) → Widget
+Container (outer, column) → Widget
+```
+
+`isInner` is set automatically — containers nested inside other containers get `isInner: true`.
+
+### Two-Container Pattern for Full-Bleed Backgrounds
+
+When a background color or image needs to span the full viewport width while content stays centered:
+
+1. **Outer container** — `content_width: full`, `flex_direction: column`, `align_items: center`. **Set the background color here.**
+2. **Inner container** — `content_width: boxed`, `flex_direction: column`. Content goes here.
+
+Never set a background color on a `content_width: boxed` container and expect it to bleed — it won't.
 
 ## Typical Workflow: Building a Page
 
-1. `create-page` — make the page with title and slug
-2. `get-elementor-global-settings` — check site's design tokens
-3. `list-elementor-widgets` — see available widgets
-4. For each section:
-   a. `add-container` — create the outer section container
-   b. `add-widget` — add widgets into the container
-5. `update-element` — tweak individual element settings
-6. `batch-update` — apply multiple tweaks at once for performance
+1. `get-elementor-global-settings` — check site's design tokens (colors, typography, breakpoints)
+2. `create-page` — make the page with title, slug, and optionally `template: "elementor_canvas"` for landing pages
+3. `list-elementor-widgets` — see available widgets (installed plugins may add more)
+4. `get-elementor-widget-schema` — check settings for each widget type you plan to use
+5. For each section:
+   a. `add-container` — create the outer section container (use `parent_id: "root"` or omit for top-level)
+   b. `add-container` — create inner layout containers if needed
+   c. `add-widget` — add widgets into containers (requires `parent_id` of a container)
+6. `batch-update` — apply multiple styling tweaks at once for performance
+7. `get-page` — verify the final result
+
+### When to Use `update-page-elementor-data`
+
+Use `add-container` and `add-widget` for building pages incrementally. Use `update-page-elementor-data` only when you have a complete, pre-built Elementor JSON tree to apply in one operation (e.g., from a template or programmatic generation). **This is a full replacement — all existing content is overwritten.**
+
+### When to Use `create-page` with `initial_elementor_data`
+
+`create-page` accepts an `initial_elementor_data` array — a complete Elementor JSON tree that seeds the page at creation time. This is useful when you have the full page structure ready and want to avoid many individual `add-container`/`add-widget` calls.
 
 ## Batch Updates
 
@@ -119,27 +206,376 @@ It accepts an array of `{element_id, settings}` operations applied in one save:
 }
 ```
 
+Returns `{ "success": true, "post_id": 42, "updated": 3, "failed": [] }`. Check the `failed` array for any operations that couldn't be applied.
+
+## Global Settings
+
+### Reading Global Settings
+
+`get-elementor-global-settings` returns the site's design tokens:
+- `custom_colors` / `system_colors` — brand color palette
+- `custom_typography` / `system_typography` — font presets
+- `container_width` — max content width (typically 1140–1440px)
+- `breakpoints` — mobile and tablet breakpoint values
+
+Always check these before choosing colors — match the site's brand palette.
+
+### Updating Global Settings
+
+`update-elementor-global-settings` accepts `colors` and `typography` arrays. Key behaviors:
+
+- **Colors and typography are merged** with existing items by `_id`, not replaced. To add a new color, provide a new `_id`. To update an existing one, use its existing `_id`.
+- **`typography_typography` must be set to `"custom"`** for any custom typography entry — the plugin enforces this. Without it, your font settings may be silently ignored.
+- **You cannot update `container_width` or `breakpoints`** through this tool — only colors and typography.
+
+**Color format:**
+```json
+{ "_id": "primary", "title": "Primary", "color": "#2563EB" }
+```
+
+**Typography format:**
+```json
+{
+  "_id": "heading",
+  "title": "Heading",
+  "typography_typography": "custom",
+  "typography_font_family": "Inter",
+  "typography_font_size": { "unit": "px", "size": 48 },
+  "typography_font_weight": "700",
+  "typography_line_height": { "unit": "em", "size": 1.2 }
+}
+```
+
+## Widget Types
+
+Always use `list-elementor-widgets` to discover available widget types — installed plugins add widgets beyond Elementor's built-in set. Then use `get-elementor-widget-schema` with the widget type key to see all controllable properties.
+
+> **Note:** Repeater fields (like `icon-list`'s items) are not shown in the schema output. When using widgets with repeaters, inspect the `get-page` output for an existing instance to see the expected structure.
+
+### Common Widget Reference
+
+| Widget | Key | Purpose | Key Settings |
+|--------|-----|---------|--------------|
+| Heading | `heading` | Page titles, section headings | `title`, `header_size` (h1–h6), `align`, `title_color`, `typography_typography` |
+| Text Editor | `text-editor` | Body copy, paragraphs, rich text | `editor` (HTML content), `align`, `text_color` |
+| Button | `button` | Call-to-action buttons | `text`, `link`, `icon`, `icon_align`, `button_text_color`, `background_color`, `border_radius` |
+| Image | `image` | Photos, illustrations, logos | `image` (media object), `image_size`, `alt`, `link_to`, `align` |
+| Icon Box | `icon-box` | Feature cards (icon + title + description) | `icon`, `title_text`, `description_text`, `view`, `icon_position` |
+| Image Box | `image-box` | Cards with photo + title + description | `image`, `title_text`, `description_text`, `image_position` |
+| Icon List | `icon-list` | Bullet lists, contact details, social links | `view` (vertical/inline), `icon_list` (repeater) |
+| Spacer | `spacer` | Vertical spacing | Avoid — use container `gap` or `padding` instead |
+| Divider | `divider` | Visual separator | `style`, `weight`, `color`, `width` |
+
 ## Common Patterns
 
 ### Hero Section
-- Outer container: full-width, column direction, background image/color
-- Inner container: boxed width, column direction
-- Heading widget (h1), text-editor widget, button widget
+- Outer container: `content_width: full`, `flex_direction: column`, background image/color
+- Inner container: `content_width: boxed`, `flex_direction: column`
+- Heading widget (H1, one per page), text-editor widget, button widget
+- Desktop padding: 80–120px top/bottom; Mobile: 40–60px
 
-### Grid Layout
-- Container with `flex_direction: row`, `flex_wrap: wrap`
-- Child containers or widgets distributed across the row
+### Feature Grid
+- Outer container: `content_width: boxed`, `flex_direction: column`
+- Section heading (H2, centered)
+- Inner container: `flex_direction: row`, `flex_wrap: wrap`, `gap` between cards
+- Each card: inner container with `icon-box` or `image-box` widget
+- 3 columns on desktop, 2 on tablet, 1 on mobile
 
-### Color and Typography Sync
-- Read `get-elementor-global-settings` to see existing design tokens
-- Match your generated colors/typography to the site's existing palette
-- Use `update-elementor-global-settings` to sync new palettes when needed
+### CTA Section
+- Full-width container with accent background color (two-container pattern)
+- Heading (H2) — benefit-oriented action statement
+- Short paragraph reinforcing value
+- Single primary button — action-oriented text ("Start Free Trial" not "Submit")
 
-## Tips
+### Landing Page Flow
+1. Hero — value proposition + primary CTA
+2. Social proof — logos, testimonials, data points
+3. Benefits/Features — 3–5 key outcomes
+4. Objection handler — FAQ or "How it works"
+5. Second CTA — repeated before footer
+6. Minimal footer — copyright + legal links
 
-- Always get a widget's schema before setting its properties
-- Generate unique 7-char hex IDs for new elements
-- Position is 0-indexed; use -1 to append at end
-- Save operations: batch when possible, single saves when interactive
-- Check global settings before choosing colors — match the site's brand
+## Working with Figma Designs
+
+When converting a Figma design to an Elementor page, follow this structured workflow.
+
+### Figma MCP Tool Availability
+
+The plugin uses the **remote server** (configured in `opencode.json`), which has different tool availability than the desktop server:
+
+| Tool | Remote | Desktop | Use For |
+|------|:---:|:---:|---|
+| `get_design_context` | ✅ | ✅ | Layout, spacing, typography, colors |
+| `get_screenshot` | ✅ | ✅ | Visual reference |
+| `get_metadata` | ✅ | ✅ | Page structure outline |
+| `get_variable_defs` | ❌ | ✅ | Named design tokens |
+| `search_design_system` | ✅ | ❌ | Find components/variables in libraries |
+| `get_libraries` | ✅ | ❌ | List connected design libraries |
+| `use_figma` | ✅ | ❌ | Create/edit designs via Plugin API |
+
+**Key limitation:** `get_variable_defs` (design tokens) is **desktop-only**. On the remote server, extract colors from `get_design_context` output or use `search_design_system` to find tokens by name.
+
+### Phase 1: Discover the Design Structure
+
+1. **Get the page outline first.** Use `get_metadata` on the Figma file to see the top-level pages and section structure. This prevents context overload — fetch the outline, then drill into individual sections.
+2. **Get design context for each section.** Call `get_design_context` on each section node. The output is always React + Tailwind CSS — you must translate it to Elementor settings (see "Converting Figma Output" below).
+3. **Get a screenshot for visual reference.** Call `get_screenshot` on the full page or each section. Structured data alone misses spatial relationships and visual hierarchy.
+4. **Get design tokens.** If `get_variable_defs` is available, extract named tokens. Otherwise, extract colors from `get_design_context` output or use `search_design_system`.
+
+**Never implement based on assumptions.** Always fetch design context and screenshot before building.
+
+#### get_design_context Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `fileKey` | string | Yes | The Figma file key from the URL |
+| `nodeId` | string | Yes | Target node ID in `123:456` format |
+| `clientLanguages` | string | No | Comma-separated languages. **Does NOT change output format** — used only for Code Connect filtering. Output is always React + Tailwind. |
+| `clientFrameworks` | string | No | Comma-separated frameworks. **Does NOT change output format** — used only for Code Connect filtering. |
+| `forceCode` | boolean | No | Default `false`. When `true`, forces full code output even for large designs. |
+| `excludeScreenshot` | boolean | No | Default `false`. When `true`, omits the screenshot from the response. |
+| `disableCodeConnect` | boolean | No | When `true`, omits Code Connect component mappings. |
+
+**Important:** The output format is **always React + Tailwind CSS**, regardless of `clientLanguages` or `clientFrameworks`. To get HTML+CSS, you must translate the output yourself.
+
+### Phase 2: Map Figma to Elementor
+
+#### Auto Layout → Flexbox Container Mapping
+
+| Figma Auto Layout | Elementor Container Setting |
+|---|---|
+| Direction: Horizontal | `flex_direction: row` |
+| Direction: Vertical | `flex_direction: column` |
+| Gap | `gap` on the container |
+| Padding | `padding` on the container |
+| Align: Start / Center / End | `align_items: flex-start / center / flex-end` |
+| Justify: Start / Center / End / Space Between | `justify_content: flex-start / center / flex-end / space-between` |
+| Fill Container | `width: 100%` or flex-grow |
+| Hug Contents | Default — no explicit width needed |
+| Fixed Size | Explicit `width` / `height` |
+| Wrap | `flex_wrap: wrap` |
+
+#### Figma Element → Elementor Widget Mapping
+
+| Figma Element | Elementor Equivalent | Notes |
+|---|---|---|
+| Frame (auto-layout) | Flexbox Container | Match direction, gap, padding, alignment |
+| Text layer (heading) | `heading` widget | Set `header_size` to match semantic level (H1–H6) |
+| Text layer (body) | `text-editor` widget | For paragraphs, lists, rich text |
+| Rectangle with fill | Container background | NOT an Image widget — use container `background_color` |
+| Image fill on frame | Container bg image OR `image` widget | Background for decorative, Image widget for content |
+| Button | `button` widget | Map font, padding, border-radius, colors |
+| Icon (vector) | `icon` or `icon-box` widget | Check Elementor's built-in icon library first |
+| Input field / form | See "Elements Without Standard Widgets" below | Requires Elementor Pro or Contact Form 7 |
+| Component instance | Saved template or Global Widget | Use Global Widget if reused 3+ times |
+
+#### Elements Without Standard Widgets
+
+These Figma elements have no direct Elementor widget equivalent. **Always ask the user how to handle them:**
+
+- **Forms** — Free Elementor has a basic form widget. Complex forms need Elementor Pro or Contact Form 7. Ask: "This design includes a form. Should I use a basic Elementor form, embed Contact Form 7 via shortcode, or use custom HTML?"
+- **Complex animations** — Figma Smart Animate doesn't map to Elementor. Ask: "Should I use Elementor Motion Effects (limited), or skip animations?"
+- **Custom interactions** — Modals, mega menus, conditional displays require custom JS or Elementor Pro. Ask: "Should I use custom HTML/JS, or simplify it?"
+- **Masks and clipping paths** — No native Elementor support. Ask: "Should I approximate with border-radius and overflow:hidden, or use custom CSS clip-path?"
+- **Blend modes** — Limited support. Ask: "Should I approximate with opacity, or use custom CSS?"
+
+**Always ask before using custom HTML.** Custom HTML breaks Elementor's responsive system and is hard to maintain.
+
+### Phase 3: Handle Common Figma Conversion Problems
+
+#### Designs Without Auto Layout
+
+Figma frames without auto-layout use absolute positioning (fixed X/Y coordinates). This creates layouts that don't flex and break on different screen sizes.
+
+1. **Always ask the user:** "This section uses absolute positioning (no auto-layout). Was this intentional for visual effect, or should I reconstruct it with flexbox for responsiveness?"
+2. **If intentional** (overlapping badges, text overlays on hero images): Use `position: absolute` on the child container with explicit offsets. Ensure the parent has `position: relative`.
+3. **If not intentional**: Reconstruct using flexbox containers. Group elements by visual proximity and purpose. Infer direction from reading order and alignment.
+
+**Never assume absolute positioning is correct.** Always flag it and ask.
+
+#### Extracting Colors
+
+1. **Use `get_variable_defs`** to get named color tokens (e.g., `color/brand/primary` → `#2563EB`). Most reliable method.
+2. **Use `get_design_context`** if `get_variable_defs` is unavailable. Extract from Tailwind classes: `bg-[#hex]`, `text-[#hex]`, `border-[#hex]`, `style={{ backgroundImage: "linear-gradient(...)" }}`.
+3. **Use `search_design_system`** to find specific tokens by name.
+4. **Map tokens to Elementor Global Colors** via `update-elementor-global-settings`, then reference with `__globals__`.
+
+**Never guess colors.** If you can't extract them from Figma tools, ask the user for exact hex values.
+
+#### Converting Figma Output (Tailwind → Elementor)
+
+`get_design_context` returns React + Tailwind CSS. You must translate it to Elementor settings:
+
+| Tailwind Class | Elementor Setting |
+|---|---|
+| `flex flex-col` | `flex_direction: column` |
+| `flex flex-row` | `flex_direction: row` |
+| `items-center` | `align_items: center` |
+| `items-start` | `align_items: flex-start` |
+| `justify-between` | `justify_content: space-between` |
+| `justify-center` | `justify_content: center` |
+| `gap-[20px]` | `gap: {"unit":"px","top":"20","right":"20","bottom":"20","left":"20"}` |
+| `p-[40px]` | `padding: {"unit":"px","top":"40","right":"40","bottom":"40","left":"40"}` |
+| `text-[#e5e5e5]` | `title_color: "#e5e5e5"` or `text_color: "#e5e5e5"` |
+| `text-[var(--primary,#3b82f6)]` | Map `#3b82f6` to Elementor global color, then use `__globals__` reference |
+| `bg-[#141619]` | `background_color: "#141619"` |
+| `bg-[var(--surface,#f5f5f5)]` | Map `#f5f5f5` to Elementor global color, then use `__globals__` reference |
+| `font-['Inter:Medium']` | `typography_typography: "custom"`, `typography_font_family: "Inter"`, `typography_font_weight: "500"` |
+| `text-[76px]` | `typography_font_size: {"unit":"px","size":76}` |
+| `leading-[86px]` | `typography_line_height: {"unit":"px","size":86}` |
+| `tracking-[0.53px]` | `typography_letter_spacing: {"unit":"px","size":0.53}` |
+| `rounded-[2px]` | `border_radius: {"unit":"px","top":"2","right":"2","bottom":"2","left":"2"}` |
+| `uppercase` | `typography_text_transform: "uppercase"` |
+| `bg-gradient-to-b from-[#141619]` | `background_color: "#141619"` (use two-container pattern for full-bleed) |
+| `style={{ backgroundImage: "linear-gradient(...)" }}` | Button gradient — use `button_background_color` with gradient stops |
+
+**Design tokens in the output:** When Figma variables are defined, colors and spacing appear as CSS custom properties with fallback values: `var(--token-name, fallback-value)`. The fallback value after the comma is the actual resolved value — use it directly in Elementor settings.
+
+**When you see `absolute` positioning in the output**, the Figma design does NOT use auto-layout. Refer to the "Designs Without Auto Layout" section above.
+
+**Handling large designs:** If `get_design_context` returns sparse metadata instead of full code, use `forceCode: true` to force full output, or use `get_metadata` first to identify sub-nodes and fetch them individually.
+
+#### Typography Mapping
+
+| Figma Property | Elementor Setting | Common Pitfall |
+|---|---|---|
+| Font family + weight | Typography → Font | Fonts may render differently in browser vs Figma canvas |
+| Font size (px) | Font Size (px, em, rem) | Figma always uses px; convert to rem for accessibility |
+| Line height (% or px) | Line Height (em, px) | **Always set explicitly** — Figma and browsers render line-height differently |
+| Letter spacing (px) | Letter Spacing (px, em) | Figma uses px; Elementor defaults to em. Convert: `em = px / font-size-px` |
+
+**Always set `typography_typography: "custom"`** when applying custom font settings — without it, your typography changes may be silently ignored by Elementor.
+
+#### Spacing Pitfalls
+
+- **Figma uses pixels only.** Elementor supports px, em, rem, %. Convert as needed.
+- **Gap belongs to the container, not individual children.** Never convert Figma's auto-layout gap to per-child margins.
+- **Fixed pixel widths break on mobile.** Use percentages or flex-grow instead.
+- **Container width mismatch.** If the Figma frame is 1440px but Elementor's content width is 1140px, everything will be slightly narrower. Check `get-elementor-global-settings` for the site's container width.
+- **Default container padding is 10px on all sides.** This compounds when nesting. Always check and remove if not needed.
+
+#### Image Handling
+
+Figma images are not automatically available in WordPress:
+
+1. **Decorative images** (backgrounds, patterns) → Use container `background_image` setting
+2. **Content images** (photos, logos) → Use the `image` widget with placeholder URLs
+3. **Icons** → Check Elementor's built-in icon library first; upload SVG only if missing
+4. **Never reference Figma CDN URLs** — they expire after 7 days
+5. **Always set alt text** — use Figma layer names as hints for descriptive alt text
+6. **Mark decorative images** with `alt=""` (empty alt) per WCAG guidelines
+
+After building, the user must upload actual images to the WordPress Media Library and update the placeholder URLs.
+
+#### Gradient Backgrounds and Buttons
+
+**Gradient buttons:**
+- For simple two-color gradients: set `button_background_color` to the start color and use hover state for the end color
+- For multi-stop gradients (3+ colors): use `button_css_id` setting and add custom CSS, or simplify to a two-color gradient
+
+**Gradient section backgrounds:**
+- Use the two-container pattern (outer full-width container with gradient, inner boxed container for content)
+- For complex gradients, use `background_overlay` with gradient type
+
+#### Decorative Elements (Blobs, Overlays, Shadows)
+
+Modern designs often include decorative background elements — gradient blobs, shadow overlays, decorative shapes. These appear in `get_design_context` as elements with absolute positioning and gradient backgrounds.
+
+**How to handle them:**
+1. **Ask the user:** "This design includes decorative background elements. Should I recreate these with CSS gradients and shadows, or simplify?"
+2. **CSS gradients** — For simple radial/linear gradients, use container `background_overlay` with gradient type
+3. **CSS box-shadow** — For shadow effects, use `box_shadow` setting on containers
+4. **Skip decorative overlays** — If the user prefers simplicity, skip `:before`/`:after` pseudo-elements and background blobs
+5. **Never use absolute positioning for decorative blobs** unless the user specifically requests pixel-perfect reproduction
+
+#### Responsive Design Gaps
+
+Most Figma designs are desktop-only. **Always ask the user:**
+
+- "Do you have mobile or tablet designs for this page?"
+- "If not, how should [specific layout element] behave on mobile? Stack vertically? Hide? Resize?"
+
+**If no mobile designs exist, apply these defaults:**
+- Hero sections: stack vertically (image on top, text below)
+- Card grids: 3-col → 2-col at tablet → 1-col at mobile
+- Font sizes: reduce 15% at tablet, 25% at mobile
+- Padding: reduce 20% at tablet, 30% at mobile
+- Side-by-side layouts: switch `flex_direction` to `column` on mobile
+- Set `flex_wrap: wrap` on all row-direction containers
+
+### Phase 4: Build the Page
+
+Follow this sequence when converting a Figma design:
+
+1. **`get-elementor-global-settings`** — Check existing site colors, typography, breakpoints
+2. **`get_metadata`** (Figma) — Get the page outline and section IDs
+3. **`get_design_context`** (Figma) — Get layout, spacing, typography, colors for each section
+4. **`get_screenshot`** (Figma) — Get visual reference for each section
+5. **`get_variable_defs`** (Figma) — Extract named design tokens (if available)
+6. **`update-elementor-global-settings`** — Sync Figma design tokens to Elementor (colors, typography)
+7. **`create-page`** — Create the page (use `template: "elementor_canvas"` for landing pages)
+8. **For each Figma section:**
+   a. Map auto-layout direction → `flex_direction`
+   b. Map gap → container `gap`
+   c. Map padding → container `padding`
+   d. Map background fills → outer container `background_color` (use two-container pattern for full-bleed)
+   e. Map text layers → `heading` or `text-editor` widgets
+   f. Map images → `image` widgets or container backgrounds
+   g. Map buttons → `button` widgets
+   h. Map icons → `icon` or `icon-box` widgets
+   i. **Ask the user** about any elements that don't map to standard widgets
+9. **`batch-update`** — Apply responsive overrides and styling tweaks
+10. **`get-page`** — Verify the final result
+
+### Handling Multi-Page Figma Files
+
+A single Figma file may contain multiple website designs as top-level frames. Call `get_metadata` without `nodeId` to list all pages, then drill into the specific page you want. Only build one page at a time, and clarify with the user which one they want.
+
+## Dos and Don'ts
+
+### ✅ DO
+
+- **DO fetch design context and screenshot before building from Figma.** Never implement from memory or assumptions.
+- **DO use the two-container pattern for full-bleed backgrounds.** Outer container (full-width, background color) → inner container (boxed, content).
+- **DO ask the user about elements that don't map to standard widgets.** Forms, animations, custom interactions, masks — always ask before using custom HTML.
+- **DO extract colors from Figma tools.** Never guess hex values.
+- **DO set line-height explicitly for all text.** Figma and browsers render line-height differently.
+- **DO convert Figma's auto-layout gap to Elementor's container `gap`.** Never use per-child margins for spacing between flex items.
+- **DO ask about mobile behavior when Figma only provides desktop designs.** Never assume how a layout should behave on mobile.
+- **DO flag absolute positioning and ask the user if it's intentional.** Never silently convert absolute positioning to flexbox without confirmation.
+- **DO sync Figma design tokens to Elementor global settings before building sections.** This ensures consistency across the entire page.
+- **DO use `__globals__` references for colors and typography instead of hardcoded hex values.
+- **DO use containers, not legacy sections/columns.** Containers produce 30–50% fewer DOM elements.
+- **DO set `flex_direction` first.** Decide row or column before adding children — it determines the entire layout flow.
+- **DO use `gap` on the parent container** instead of margins on individual children.
+- **DO use `content_width: boxed`** for centered content sections. Use `full` only for hero banners and full-bleed sections.
+- **DO keep nesting to 3 levels maximum.** Outer container → inner container → widget.
+- **DO call `get-elementor-widget-schema` before setting properties.** Widget settings vary by type — never guess property names.
+- **DO use the correct HTML tag for headings.** One H1 per page, then H2, H3 in hierarchy. Never skip levels.
+- **DO use `batch-update` for multiple changes.** One save operation is faster than many individual ones.
+- **DO set `typography_typography: "custom"`** when applying custom font settings — without it, Elementor may ignore your typography changes.
+- **DO remove default container padding** (10px on all sides) when not needed — it compounds when nesting.
+
+### ❌ DON'T
+
+- **DON'T set background colors on `content_width: boxed` containers and expect full-bleed.** Use the two-container pattern instead.
+- **DON'T skip the screenshot step when building from Figma.** Structured data alone misses spatial relationships and visual hierarchy.
+- **DON'T guess colors.** Always extract from Figma tools or ask the user for exact values.
+- **DON'T convert Figma's auto-layout gap to per-child margins.** Use container `gap` — it's consistent and doesn't compound at edges.
+- **DON'T use fixed pixel widths from Figma directly.** Convert to percentages or flex-grow for responsiveness.
+- **DON'T reference Figma CDN URLs for images.** They expire after 7 days. Use placeholder URLs and have the user upload real images.
+- **DON'T assume absolute positioning in Figma is intentional.** Always ask the user.
+- **DON'T use custom HTML as a first resort.** It breaks Elementor's responsive system and is hard to maintain.
+- **DON'T round spacing values to "nice" numbers.** Use the exact values from Figma's design context. 18px padding should be 18px, not 16px or 20px.
+- **DON'T wrap everything in containers.** If a single widget doesn't need layout context, place it directly in the parent container.
+- **DON'T use spacer widgets for vertical spacing.** Use container `gap`, `padding`, or `margin` instead.
+- **DON'T set margins on individual widgets when `gap` will do.** Gap is consistent, predictable, and doesn't compound at edges.
+- **DON'T mix containers and legacy sections on the same page.** For new pages, always use containers.
+- **DON'T nest more than 3 levels deep.** Deep nesting is the #1 cause of Elementor performance problems.
+- **DON'T hardcode widget type keys.** Always discover available types with `list-elementor-widgets` — installed plugins add widgets.
+- **DON'T fake headings by making text-editor text big.** Use the heading widget with the correct `header_size` (H1–H6).
+- **DON'T use hardcoded hex colors when a global color exists.** Use `__globals__` references instead.
+- **DON'T create pages with 50+ widgets.** Each widget adds DOM nodes, CSS, and potentially JS. Keep pages under 30 widgets for optimal performance.
+- **DON'T add parallax, scroll effects, or motion to every section.** These are expensive on mobile and hurt Core Web Vitals. Limit to 3–5 strategic animations per page.
+- **DON'T skip responsive design when Figma only has desktop frames.** Always implement mobile breakpoints.
 GUIDE;
