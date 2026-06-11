@@ -1,0 +1,6 @@
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Dev/test artifacts
+*.log
