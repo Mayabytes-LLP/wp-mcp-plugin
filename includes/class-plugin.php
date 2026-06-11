@@ -90,8 +90,8 @@ class Plugin {
 			$ability_names,
 			array(),
 			array( 'wp-mcp/usage-guide' ),
-			function () {
-				return $this->api_key->verify_transport_permission();
+			function ( $request ) {
+				return $this->api_key->verify_transport_permission( $request );
 			}
 		);
 	}

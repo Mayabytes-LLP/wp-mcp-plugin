@@ -171,8 +171,8 @@ class SchemaGenerator {
 			case 'switcher':
 				$fragment['type'] = 'boolean';
 				$fragment['default'] = ! empty( $control['return_value'] )
-					? $control['return_value'] === ( $control['default'] ?? '' )
-					: ( $control['default'] ?? false );
+					? ( $control['return_value'] === ( $control['default'] ?? '' ) )
+					: (bool) ( $control['default'] ?? false );
 				break;
 
 			case 'select':

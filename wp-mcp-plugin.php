@@ -59,7 +59,7 @@ function wp_mcp_show_dependency_notice( string $slug ): void {
 			'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
 			sprintf(
 				/* translators: 1: plugin name, 2: dependency name */
-				esc_html__( 'WP MCP Plugin requires %2$s to be installed and activated. Please install %2$s to enable the MCP server.', 'wp-mcp-plugin' ),
+				esc_html__( '%1$s requires %2$s to be installed and activated. Please install %2$s to enable the MCP server.', 'wp-mcp-plugin' ),
 				'<strong>WP MCP Plugin</strong>',
 				'<strong>' . esc_html( $label ) . '</strong>'
 			)

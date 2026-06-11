@@ -608,7 +608,7 @@ class Element {
 				if ( preg_match( '/^(url|link|href|src)$/i', $key ) ) {
 					$sanitized[ $key ] = esc_url_raw( $value );
 				} else {
-					$sanitized[ $key ] = wp_kses_post( $value );
+					$sanitized[ $key ] = sanitize_text_field( $value );
 				}
 			} elseif ( is_array( $value ) ) {
 				$sanitized[ $key ] = $this->sanitize_settings( $value );

@@ -348,7 +348,13 @@ class Query {
 		}
 
 		$templates     = array();
-		$templates_raw = \Elementor\Plugin::$instance->templates_manager->get_source( 'local' )->get_items();
+		$source        = \Elementor\Plugin::$instance->templates_manager->get_source( 'local' );
+
+		if ( ! $source ) {
+			return array( 'templates' => array() );
+		}
+
+		$templates_raw = $source->get_items();
 		$filter_type   = sanitize_text_field( $input['type'] ?? '' );
 
 		foreach ( $templates_raw as $template ) {
