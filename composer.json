@@ -8,6 +8,9 @@
         "wordpress/mcp-adapter": "^0.5.0",
         "automattic/jetpack-autoloader": "^2.11"
     },
+    "require-dev": {
+        "arts/elementor-stubs": "^4.1"
+    },
     "config": {
         "platform": {
             "php": "8.0"

@@ -24,6 +24,9 @@ class Plugin {
 	/** @var string[] Full list of ability slugs registered by this plugin. */
 	private array $ability_names = array();
 
+	/** @var string[] Full list of resource ability slugs registered by this plugin. */
+	private array $resource_names = array();
+
 	public static function instance(): self {
 		if ( null === self::$instance ) {
 			self::$instance       = new self();
@@ -73,7 +76,8 @@ class Plugin {
 	public function register_abilities(): void {
 		$registrar = new Registrar( $this->schema_generator );
 		$registrar->register_all();
-		$this->ability_names = $registrar->get_ability_names();
+		$this->ability_names  = $registrar->get_ability_names();
+		$this->resource_names = $registrar->get_resource_names();
 	}
 
 	public function register_mcp_server( $adapter ): void {
@@ -99,14 +103,14 @@ class Plugin {
 			'wp-mcp',
 			'mcp',
 			__( 'WP MCP Plugin - Elementor Builder', 'wp-mcp-plugin' ),
-			__( 'AI-accessible Elementor page building tools: create pages, add containers and widgets, manage global design settings.', 'wp-mcp-plugin' ),
+			\wp_mcp_get_instructions(),
 			'v' . WP_MCP_PLUGIN_VERSION,
 			array( \WP\MCP\Transport\HttpTransport::class ),
 			\WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler::class,
 			\WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler::class,
 			$ability_names,
+			$this->resource_names,
 			array(),
-			array( 'wp-mcp/usage-guide' ),
 			function ( $request ) {
 				return $this->api_key->verify_transport_permission( $request );
 			}

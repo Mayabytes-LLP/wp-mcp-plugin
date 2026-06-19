@@ -94,7 +94,11 @@ function wp_mcp_show_dependency_notice( string $slug ): void {
 }
 
 /**
- * Bootstrap the plugin on plugins_loaded at priority 20 (after Elementor).
+ * Bootstrap the plugin on init at priority 5.
+ *
+ * Runs after translations have been set up for the current locale
+ * (see WP 6.7+ just-in-time textdomain loading), but before the MCP
+ * Adapter initializes on rest_api_init priority 15.
  */
 function wp_mcp_init(): void {
 	$missing = wp_mcp_check_dependencies();
@@ -114,19 +118,25 @@ function wp_mcp_init(): void {
 	 */
 	\WP\MCP\Core\McpAdapter::instance();
 
+	require_once WP_MCP_PLUGIN_DIR . 'includes/instructions.php';
+	require_once WP_MCP_PLUGIN_DIR . 'includes/class-docs.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-api-key.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-schema-generator.php';
+	require_once WP_MCP_PLUGIN_DIR . 'includes/class-preview-token.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-admin-page.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/abilities/class-query-abilities.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/abilities/class-page-abilities.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/abilities/class-element-abilities.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/abilities/class-settings-abilities.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/abilities/class-ability-registrar.php';
+	require_once WP_MCP_PLUGIN_DIR . 'includes/abilities/class-render-abilities.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-plugin.php';
 	\WpMcp\Plugin::instance();
+
+	add_action( 'pre_get_posts', array( '\WpMcp\PreviewToken', 'maybe_grant_access' ), 1, 1 );
 }
 
-add_action( 'plugins_loaded', 'wp_mcp_init', 20 );
+add_action( 'init', 'wp_mcp_init', 5 );
 
 /**
  * Plugin activation: set default options if not already present.
@@ -153,6 +163,7 @@ function wp_mcp_activate(): void {
 		'wp-mcp/batch-update',
 		'wp-mcp/update-elementor-global-settings',
 		'wp-mcp/get-plugin-status',
+		'wp-mcp/render-page',
 	);
 
 	if ( false === get_option( 'wp_mcp_enabled_tools' ) ) {

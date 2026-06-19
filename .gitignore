@@ -18,9 +18,6 @@ ehthumbs.db
 phpunit.xml
 .phpunit.result.cache
 
-vendor/
-
-# Composer dev-only files (lock file is committed for reproducibility;
-# vendor/ is intentionally committed — this is a drop-in plugin).
-# Do NOT add vendor/ here.
+# vendor/ is intentionally committed — this is a drop-in plugin and
+# end users must not need Composer. Do NOT add vendor/ here.
 composer.phar

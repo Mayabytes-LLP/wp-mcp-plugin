@@ -33,7 +33,7 @@ class Settings {
 
 		wp_register_ability( 'wp-mcp/update-elementor-global-settings', array(
 			'label'             => __( 'Update Elementor Global Settings', 'wp-mcp-plugin' ),
-			'description'       => __( 'IMPORTANT: Call the usage-guide prompt before using this tool to understand Elementor\'s data model and avoid broken layouts. Update the active Elementor kit\'s global design settings: custom colors and typography. Use get-elementor-global-settings first to see the current state.', 'wp-mcp-plugin' ),
+			'description'       => __( 'Update the active Elementor kit\'s global design settings: custom colors and typography. Use get-elementor-global-settings first to see the current state. See resource \`wp-mcp://docs/global-settings\` for color/typography format and the \`typography_typography: "custom"\` requirement.', 'wp-mcp-plugin' ),
 			'category'          => 'wp-mcp-plugin',
 			'execute_callback'  => array( $this, 'execute_update_global_settings' ),
 			'permission_callback' => array( $this, 'check_settings_permission' ),

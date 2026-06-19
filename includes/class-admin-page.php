@@ -212,6 +212,27 @@ class AdminPage {
 					</form>
 				</div>
 
+				<!-- Visual Comparison Workflow Card -->
+				<div class="card" style="margin-bottom:20px;padding:0 20px 20px;">
+					<h2><?php esc_html_e( 'Visual Comparison Workflow', 'wp-mcp-plugin' ); ?></h2>
+					<p>
+						<?php esc_html_e( 'Use the', 'wp-mcp-plugin' ); ?>
+						<code>wp-mcp/render-page</code>
+						<?php esc_html_e( 'tool to generate authenticated preview URLs for draft and private Elementor pages. This enables visual comparison with Figma designs via headless browser screenshots.', 'wp-mcp-plugin' ); ?>
+					</p>
+					<h3><?php esc_html_e( 'Typical workflow', 'wp-mcp-plugin' ); ?></h3>
+					<ol style="margin-left:20px;max-width:700px;">
+						<li><?php esc_html_e( 'Build or update an Elementor page using the plugin\'s write tools.', 'wp-mcp-plugin' ); ?></li>
+						<li><?php esc_html_e( 'Call', 'wp-mcp-plugin' ); ?> <code>wp-mcp/render-page</code> <?php esc_html_e( 'to get a time-limited preview URL and Elementor element selectors.', 'wp-mcp-plugin' ); ?></li>
+						<li><?php esc_html_e( 'Open the preview URL in Playwright or Puppeteer and take a screenshot.', 'wp-mcp-plugin' ); ?></li>
+						<li><?php esc_html_e( 'Compare the screenshot against the Figma design using visual diffing or model-based comparison.', 'wp-mcp-plugin' ); ?></li>
+						<li><?php esc_html_e( 'Fix any layout differences and repeat up to 3 times for best results.', 'wp-mcp-plugin' ); ?></li>
+					</ol>
+					<p style="color:#666;font-style:italic;">
+						<?php esc_html_e( 'The preview token is short-lived (default 5 minutes) and scoped to a single page. Do NOT share preview URLs — they grant read access to draft/private pages.', 'wp-mcp-plugin' ); ?>
+					</p>
+				</div>
+
 			</div>
 		</div>
 		<?php
@@ -298,6 +319,7 @@ class AdminPage {
 				'wp-mcp/get-elementor-widget-schema' => __( 'Get widget schema', 'wp-mcp-plugin' ),
 				'wp-mcp/list-elementor-templates'  => __( 'List saved templates', 'wp-mcp-plugin' ),
 				'wp-mcp/get-elementor-global-settings' => __( 'Get global design settings', 'wp-mcp-plugin' ),
+				'wp-mcp/render-page'             => __( 'Preview page for visual comparison', 'wp-mcp-plugin' ),
 			),
 			__( 'Write Tools', 'wp-mcp-plugin' )      => array(
 				'wp-mcp/create-page'                 => __( 'Create a new page', 'wp-mcp-plugin' ),
