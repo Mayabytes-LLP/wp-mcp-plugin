@@ -55,7 +55,7 @@ class Query {
 				'properties' => array(
 					'status' => array(
 						'type'        => 'string',
-						'description' => 'Filter by post status. Default: publish.',
+						'description' => 'Filter by post status. Default: any (returns all statuses).',
 						'enum'        => array( 'publish', 'draft', 'pending', 'private', 'trash', 'any' ),
 					),
 					'search' => array(
@@ -95,7 +95,7 @@ class Query {
 	}
 
 	public function execute_list_pages( array $input ): array {
-		$status   = sanitize_text_field( $input['status'] ?? 'publish' );
+		$status   = sanitize_text_field( $input['status'] ?? 'any' );
 		$search   = sanitize_text_field( $input['search'] ?? '' );
 		$per_page = min( max( (int) ( $input['per_page'] ?? 20 ), 1 ), 100 );
 		$page     = max( (int) ( $input['page'] ?? 1 ), 1 );

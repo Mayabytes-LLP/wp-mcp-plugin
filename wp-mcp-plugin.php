@@ -163,7 +163,7 @@ function wp_mcp_activate(): void {
 		'wp-mcp/batch-update',
 		'wp-mcp/update-elementor-global-settings',
 		'wp-mcp/get-plugin-status',
-		'wp-mcp/render-page',
+		'wp-mcp/visual-compare-preview',
 	);
 
 	if ( false === get_option( 'wp_mcp_enabled_tools' ) ) {

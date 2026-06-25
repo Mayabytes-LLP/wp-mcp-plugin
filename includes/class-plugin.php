@@ -64,6 +64,9 @@ class Plugin {
 
 		// Filter: allow other code to modify the ability list before server registration
 		add_filter( 'wp_mcp_ability_names', array( $this, 'filter_disabled_tools' ), 10, 1 );
+
+		// Strip wp-mcp- prefix from MCP tool names so they appear clean (e.g. "list-pages" not "wp-mcp-list-pages").
+		add_filter( 'mcp_adapter_tool_name', array( $this, 'strip_tool_name_prefix' ), 10, 2 );
 	}
 
 	public function register_category(): void {
@@ -118,6 +121,21 @@ class Plugin {
 	}
 
 	/**
+	 * Strip the wp-mcp- prefix from MCP tool names so tools appear as
+	 * "list-pages" instead of "wp-mcp-list-pages".
+	 *
+	 * @param string     $tool_name Sanitized MCP tool name (e.g. "wp-mcp-list-pages").
+	 * @param \WP_Ability $ability  The WordPress ability being converted.
+	 * @return string Clean tool name.
+	 */
+	public function strip_tool_name_prefix( string $tool_name, \WP_Ability $ability ): string {
+		if ( str_starts_with( $tool_name, 'wp-mcp-' ) ) {
+			return substr( $tool_name, 7 );
+		}
+		return $tool_name;
+	}
+
+	/**
 	 * Remove tools the admin has disabled via the settings page.
 	 *
 	 * @param string[] $ability_names Full list of ability slugs.
@@ -128,6 +146,23 @@ class Plugin {
 		if ( ! is_array( $enabled_tools ) ) {
 			return $ability_names;
 		}
+
+		// Migrate renamed tool slugs (pre-v0.2.0) to current naming.
+		$renamed = array(
+			'wp-mcp/render-page' => 'wp-mcp/visual-compare-preview',
+		);
+		$updated = false;
+		foreach ( $renamed as $old => $new ) {
+			$pos = array_search( $old, $enabled_tools, true );
+			if ( false !== $pos ) {
+				$enabled_tools[ $pos ] = $new;
+				$updated = true;
+			}
+		}
+		if ( $updated ) {
+			update_option( 'wp_mcp_enabled_tools', $enabled_tools );
+		}
+
 		return array_values( array_intersect( $ability_names, $enabled_tools ) );
 	}
 }

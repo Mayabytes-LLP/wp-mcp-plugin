@@ -48,3 +48,5 @@ This skill ships inside the wp-mcp-plugin. To activate it in a skills-aware clie
 - Cursor: `.cursor/skills/elementor-page-builder/SKILL.md`
 
 The skill is client-agnostic; the MCP resources it points at work in any MCP-respecting client via `mcp_read_resource`.
+
+

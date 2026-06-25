@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Visual render and comparison tools for Elementor pages.
  *
- * Provides wp-mcp/render-page — generates an authenticated preview URL
+ * Provides visual-compare-preview — generates an authenticated preview URL
  * so headless browser tools (Playwright, Puppeteer) can take screenshots
  * of draft/private Elementor pages for visual comparison with Figma designs.
  */
@@ -38,13 +38,13 @@ class Render {
 	}
 
 	// ──────────────────────────────────────────────
-	//  wp-mcp/render-page
+	//  visual-compare-preview
 	// ──────────────────────────────────────────────
 
 	private function register_render_page(): void {
-		$this->ability_names[] = 'wp-mcp/render-page';
+		$this->ability_names[] = 'wp-mcp/visual-compare-preview';
 
-		wp_register_ability( 'wp-mcp/render-page', array(
+		wp_register_ability( 'wp-mcp/visual-compare-preview', array(
 			'label'             => __( 'Render Page for Visual Comparison', 'wp-mcp-plugin' ),
 			'description'       => __(
 				'Generate an authenticated, time-limited preview URL for a specific WordPress page '
@@ -53,7 +53,7 @@ class Render {
 				. 'Returns Elementor element selectors for precise targeting in browser automation tools. '
 				. 'The token expires after the specified TTL (default 300s, max 600s). '
 				. 'Use this as part of the Figma → Elementor visual comparison workflow: '
-				. '1) build page, 2) render-page to get URL, 3) Playwright screenshot, '
+				. '1) build page, 2) visual-compare-preview to get URL, 3) Playwright screenshot, '
 				. '4) model compares against Figma image, 5) fix differences, repeat.',
 				'wp-mcp-plugin'
 			),
@@ -231,7 +231,7 @@ class Render {
 				'element_id' => $node['id'],
 				'selector'   => '.elementor-element-' . $node['id'],
 				'elType'     => $node['elType'] ?? 'unknown',
-				'widgetType' => $node['widgetType'] ?? null,
+				'widgetType' => $node['widgetType'] ?? '',
 			);
 
 			$result[] = $entry;

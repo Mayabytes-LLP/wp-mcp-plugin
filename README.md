@@ -67,29 +67,29 @@ For Claude Desktop / other MCP clients, follow the client's remote-server config
 
 ### Read / query
 
-- `wp-mcp/list-pages` — list WordPress pages with Elementor status.
-- `wp-mcp/get-page` — get a page with its full Elementor data tree.
-- `wp-mcp/list-elementor-widgets` — list registered widget types.
-- `wp-mcp/get-elementor-widget-schema` — full JSON schema for a widget type.
-- `wp-mcp/list-elementor-templates` — list saved Elementor templates.
-- `wp-mcp/get-elementor-global-settings` — active kit colors and typography.
-- `wp-mcp/get-plugin-status` — adapter version, Elementor status, API-key state.
+- `list-pages` — list WordPress pages with Elementor status.
+- `get-page` — get a page with its full Elementor data tree.
+- `list-elementor-widgets` — list registered widget types.
+- `get-elementor-widget-schema` — full JSON schema for a widget type.
+- `list-elementor-templates` — list saved Elementor templates.
+- `get-elementor-global-settings` — active kit colors and typography.
+- `get-plugin-status` — adapter version, Elementor status, API-key state.
 
 ### Write / mutate
 
-- `wp-mcp/create-page` — create a new page (optionally with initial Elementor data).
-- `wp-mcp/update-page-elementor-data` — replace a page's entire Elementor content.
-- `wp-mcp/delete-page` — trash or permanently delete a page.
-- `wp-mcp/add-container` — add a flex/grid container to a page.
-- `wp-mcp/add-widget` — add a widget into a container.
-- `wp-mcp/update-element` — update settings on a single element.
-- `wp-mcp/remove-element` — remove an element and its children.
-- `wp-mcp/batch-update` — update multiple elements in one save.
-- `wp-mcp/update-elementor-global-settings` — update kit colors/typography.
+- `create-page` — create a new page (optionally with initial Elementor data).
+- `update-page-elementor-data` — replace a page's entire Elementor content.
+- `delete-page` — trash or permanently delete a page.
+- `add-container` — add a flex/grid container to a page.
+- `add-widget` — add a widget into a container.
+- `update-element` — update settings on a single element.
+- `remove-element` — remove an element and its children.
+- `batch-update` — update multiple elements in one save.
+- `update-elementor-global-settings` — update kit colors/typography.
 
 ### Render
 
-- `wp-mcp/render-page` — generate an authenticated, time-limited preview URL for headless-browser screenshotting.
+- `visual-compare-preview` — generate an authenticated, time-limited preview URL for headless-browser screenshotting.
 
 All mutating tools require `manage_options` capability. The API key gates the transport; it does not authenticate as a WordPress user.
 
@@ -98,10 +98,10 @@ All mutating tools require `manage_options` capability. The API key gates the tr
 This plugin is designed to pair with a Figma MCP server. The typical loop:
 
 1. MCP client reads a Figma design via the Figma MCP.
-2. MCP client calls `wp-mcp/create-page` and `wp-mcp/add-container` / `wp-mcp/add-widget` to build the Elementor page.
-3. `wp-mcp/render-page` produces a preview URL.
+2. MCP client calls `create-page` and `add-container` / `add-widget` to build the Elementor page.
+3. `visual-compare-preview` produces a preview URL.
 4. A headless browser (Playwright/Puppeteer) screenshots the preview.
-5. The screenshot is compared against the Figma design; differences are fixed with further `wp-mcp/update-element` / `wp-mcp/batch-update` calls.
+5. The screenshot is compared against the Figma design; differences are fixed with further `update-element` / `batch-update` calls.
 
 The plugin ships in-app documentation (container nesting limits, the full-bleed pattern, widget schemas) accessible to the MCP client as prompts.
 
