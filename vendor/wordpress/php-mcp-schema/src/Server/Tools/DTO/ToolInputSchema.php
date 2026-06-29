@@ -90,10 +90,10 @@ class ToolInputSchema extends AbstractDataTransferObject
             $result['$schema'] = $this->schema;
         }
         $result['type'] = $this->type;
-        $result['properties'] = !empty($this->properties)
-            ? $this->properties
-            : new \stdClass();
-        if ($this->required !== null) {
+        if ( ! empty( $this->properties ) ) {
+            $result['properties'] = $this->properties;
+        }
+        if ( $this->required !== null ) {
             $result['required'] = $this->required;
         }
 

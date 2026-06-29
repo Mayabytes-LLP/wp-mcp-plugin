@@ -4,7 +4,7 @@
  * Plugin URI:   https://github.com/Mayabytes-LLP/wp-mcp-plugin
  * Description:  Exposes WordPress + Elementor as an MCP server so AI coding agents can
  *               read Figma designs and generate Elementor pages through MCP tools.
- * Version:      0.1.0
+ * Version:      0.1.1
  * Requires at least: 6.9
  * Tested up to: 6.9
  * Requires PHP: 8.0
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WP_MCP_PLUGIN_VERSION', '0.1.0' );
+define( 'WP_MCP_PLUGIN_VERSION', '0.1.1' );
 define( 'WP_MCP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WP_MCP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'WP_MCP_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -121,6 +121,7 @@ function wp_mcp_init(): void {
 	require_once WP_MCP_PLUGIN_DIR . 'includes/instructions.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-docs.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-mcp-hardening.php';
+	require_once WP_MCP_PLUGIN_DIR . 'includes/class-http-transport-sse.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-api-key.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-schema-generator.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-ability-schemas.php';

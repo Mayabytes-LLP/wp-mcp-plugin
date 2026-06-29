@@ -103,7 +103,7 @@ class Plugin {
 			return;
 		}
 
-		$ability_names = apply_filters( 'wp_mcp_ability_names', $this->ability_names );
+		$ability_names = \apply_filters( 'wp_mcp_ability_names', $this->ability_names );
 
 		$adapter->create_server(
 			'wp-mcp',
@@ -112,7 +112,7 @@ class Plugin {
 			__( 'WP MCP Plugin - Elementor Builder', 'wp-mcp-plugin' ),
 			\wp_mcp_get_instructions(),
 			'v' . WP_MCP_PLUGIN_VERSION,
-			array( \WP\MCP\Transport\HttpTransport::class ),
+			array( HttpTransportSse::class ),
 			\WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler::class,
 			\WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler::class,
 			$ability_names,

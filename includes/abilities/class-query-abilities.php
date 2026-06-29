@@ -389,9 +389,7 @@ class Query {
 			'execute_callback'  => array( $this, 'execute_get_global_settings' ),
 			'permission_callback' => array( $this, 'check_read_permission' ),
 			'input_schema'      => array(
-				'type'                 => 'object',
-				'properties'           => array(),
-				'additionalProperties' => false,
+				'type' => 'object',
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
@@ -404,8 +402,16 @@ class Query {
 						'type'  => 'array',
 						'items' => AbilitySchemas::kit_typography_item(),
 					),
-					'container_width' => array( 'type' => array( 'object', 'null' ) ),
-					'breakpoints'     => array( 'type' => array( 'object', 'null' ) ),
+					'container_width' => array(
+						'type'                 => 'object',
+						'additionalProperties' => true,
+						'description'          => 'Kit container width settings (empty object when unset).',
+					),
+					'breakpoints'     => array(
+						'type'                 => 'object',
+						'additionalProperties' => true,
+						'description'          => 'Breakpoint viewport settings (empty object when unset).',
+					),
 				),
 				'required'   => array( 'colors', 'typography', 'container_width', 'breakpoints' ),
 			),
@@ -426,8 +432,8 @@ class Query {
 		return array(
 			'colors'          => $settings['custom_colors'],
 			'typography'      => $settings['custom_typography'],
-			'container_width' => $settings['container_width'],
-			'breakpoints'     => $settings['breakpoints'],
+			'container_width' => $settings['container_width'] ?? array(),
+			'breakpoints'     => $settings['breakpoints'] ?? array(),
 		);
 	}
 }

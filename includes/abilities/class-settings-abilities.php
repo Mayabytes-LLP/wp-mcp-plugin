@@ -178,8 +178,7 @@ class Settings {
 			'execute_callback'  => array( $this, 'execute_get_plugin_status' ),
 			'permission_callback' => array( $this, 'check_settings_permission' ),
 			'input_schema'      => array(
-				'type'                 => 'object',
-				'additionalProperties' => false,
+				'type' => 'object',
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
