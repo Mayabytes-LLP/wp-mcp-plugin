@@ -1,0 +1,19 @@
+{
+	"intelephense": {
+		"environment": {
+			"phpVersion": "8.4.21",
+			"includePaths": [
+				"vendor/php-stubs/wordpress-stubs",
+				"vendor/arts/elementor-stubs"
+			]
+		},
+		"files": {
+			"maxSize": 6000000,
+			"exclude": [
+				"**/.git/**",
+				"**/vendor/**/vendor/**"
+			]
+		},
+		"storagePath": "/tmp/intelephense"
+	}
+}

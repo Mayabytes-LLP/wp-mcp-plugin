@@ -9,8 +9,10 @@ ehthumbs.db
 *.swo
 *~
 .idea/
-.vscode/
-*.sublime-project
+.vscode/*
+!.vscode/settings.json
+.cursor/*
+!.cursor/settings.json
 *.sublime-workspace
 
 # Dev/test artifacts
@@ -29,6 +31,4 @@ node_modules/
 # Environment variables
 .env.*
 
-.cursor/
-.cursor/mcp.json
 opencode.jsonc

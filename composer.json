@@ -9,7 +9,8 @@
         "automattic/jetpack-autoloader": "^2.11"
     },
     "require-dev": {
-        "arts/elementor-stubs": "^4.1"
+        "arts/elementor-stubs": "^4.1",
+        "php-stubs/wordpress-stubs": "^6.9"
     },
     "config": {
         "platform": {

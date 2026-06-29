@@ -266,12 +266,19 @@ class McpToolValidator {
 		}
 
 		// If properties exist, they must be an array/object.
-		if ( isset( $schema['properties'] ) && ! is_array( $schema['properties'] ) ) {
-			$errors[] = sprintf(
-			/* translators: %s: field name */
-				__( 'Tool %s properties must be an object/array', 'mcp-adapter' ),
-				$field_name
-			);
+		// ToolInputSchema::toArray() emits an empty stdClass for parameterless tools.
+		if ( isset( $schema['properties'] ) ) {
+			if ( $schema['properties'] instanceof \stdClass ) {
+				$schema['properties'] = (array) $schema['properties'];
+			}
+
+			if ( ! is_array( $schema['properties'] ) ) {
+				$errors[] = sprintf(
+				/* translators: %s: field name */
+					__( 'Tool %s properties must be an object/array', 'mcp-adapter' ),
+					$field_name
+				);
+			}
 		}
 
 		// If required exists, it must be an array.

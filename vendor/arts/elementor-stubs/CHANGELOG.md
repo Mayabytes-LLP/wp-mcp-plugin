@@ -1,0 +1,119 @@
+# Changelog
+
+## [4.1.1] - 2026-06-02
+
+- changed: updated stubs for Elementor 4.1.1 (#49)
+- fixed: allow 4-segment ProElements version in stub version test
+
+## [4.0.5] - 2026-05-01
+
+- changed: updated stubs for Elementor 4.0.5 (#44)
+
+## [4.0.2] - 2026-04-15
+
+- changed: updated stubs for Elementor 4.0.2 (#40)
+
+## [4.0.0] - 2026-04-01
+
+- changed: updated stubs for Elementor 4.0.0 (#36)
+
+## [3.35.7] - 2026-03-15
+
+- changed: updated stubs for Elementor 3.35.7 (#32)
+
+## [3.35.6.1] - 2026-03-05
+
+- changed: updated stubs for Elementor 3.35.6 (#31)
+- fixed: look up method signatures from the correct interface block
+- fixed: handle abstract method errors in missing parent stub generation
+- fixed: auto-add empty stubs for missing parent classes instead of removing children
+- fixed: auto-remove orphaned stubs whose parent class is missing from source
+
+## [3.35.6] - 2026-03-05
+
+- changed: updated stubs for Elementor 3.35.6 (#30)
+- fixed: disable git hooks in CI to prevent captainhook failures on self-hosted runner
+- fixed: move woocommerce-stubs from require-dev to require
+- update gitattributes and composer dependencies
+- migrate all workflows to self-hosted runner
+
+## [3.35.4] - 2026-02-13
+
+- changed: updated stubs for Elementor 3.35.4 (#27)
+- fixed: downgrade woocommerce-stubs to 10.4.2
+- changed: updated stubs for Elementor 3.34.4 (#22)
+
+## [3.34.4] - 2026-01-30
+
+- added: .vscode to gitignore
+
+## [3.34.1] - 2026-01-15
+
+- changed: updated stubs for Elementor 3.34.1 (#18)
+- fixed: run tests and report status checks in generate workflow (#17)
+- fixed: use PR with auto-merge for stub generation (#15)
+- fixed: add actions:write permission to check-updates workflow (#14)
+- Add Contributor Covenant Code of Conduct (#13)
+
+## [3.34.0.4] - 2025-12-24
+
+- feat(tests): expand unit test coverage for stub generation (#10)
+
+## [3.34.0.3] - 2025-12-23
+
+- Enhance security policy with scope and reporting details (#9)
+- fix(deps): move composer-normalize to require-dev (#8)
+- Automate CHANGELOG with git-cliff (#7)
+
+## [3.34.0.2] - 2025-12-23
+
+- added: project infrastructure (v3.34.0.2)
+- improved: README for SEO and discoverability
+
+## [3.34.0.1] - 2025-12-23
+
+- fixed: ensure composer.lock is compatible with PHP 8.0
+- **BREAKING:** require PHP 8.0 or higher
+- improved: status badges to README
+- improved: export-ignore configuration
+- added: automated version checking workflow
+
+## [3.34.0] - 2025-12-23
+
+- changed: updated stubs for Elementor 3.34.0
+
+## [3.33.6.2] - 2025-12-22
+
+- improved: PHPDoc class name resolution for Elementor namespaces
+
+## [3.33.6.1] - 2025-12-21
+
+- changed: updated stubs for Elementor 3.33.6
+- fixed: address PR review feedback
+- added: resolve unqualified class names in PHPDoc annotations
+- fixed: grant write permission for PR comments in Claude review workflow
+
+## [3.33.6] - 2025-12-21
+
+- changed: updated stubs for Elementor 3.33.6
+- Initial commit
+
+[4.1.1]: https://github.com/artkrsk/elementor-stubs/compare/v4.0.5...v4.1.1
+[4.0.5]: https://github.com/artkrsk/elementor-stubs/compare/v4.0.2...v4.0.5
+[4.0.2]: https://github.com/artkrsk/elementor-stubs/compare/v4.0.0...v4.0.2
+[4.0.0]: https://github.com/artkrsk/elementor-stubs/compare/v3.35.7...v4.0.0
+[3.35.7]: https://github.com/artkrsk/elementor-stubs/compare/v3.35.6.1...v3.35.7
+[3.35.6.1]: https://github.com/artkrsk/elementor-stubs/compare/v3.35.6...v3.35.6.1
+[3.35.6]: https://github.com/artkrsk/elementor-stubs/compare/v3.35.4...v3.35.6
+[3.35.4]: https://github.com/artkrsk/elementor-stubs/compare/v3.34.4...v3.35.4
+[3.34.4]: https://github.com/artkrsk/elementor-stubs/compare/v3.34.1...v3.34.4
+[3.34.1]: https://github.com/artkrsk/elementor-stubs/compare/v3.34.0.4...v3.34.1
+[3.34.0.4]: https://github.com/artkrsk/elementor-stubs/compare/v3.34.0.3...v3.34.0.4
+[3.34.0.3]: https://github.com/artkrsk/elementor-stubs/compare/v3.34.0.2...v3.34.0.3
+[3.34.0.2]: https://github.com/artkrsk/elementor-stubs/compare/v3.34.0.1...v3.34.0.2
+[3.34.0.1]: https://github.com/artkrsk/elementor-stubs/compare/v3.34.0...v3.34.0.1
+[3.34.0]: https://github.com/artkrsk/elementor-stubs/compare/v3.33.6.2...v3.34.0
+[3.33.6.2]: https://github.com/artkrsk/elementor-stubs/compare/v3.33.6.1...v3.33.6.2
+[3.33.6.1]: https://github.com/artkrsk/elementor-stubs/compare/v3.33.6...v3.33.6.1
+[3.33.6]: https://github.com/artkrsk/elementor-stubs/releases/tag/v3.33.6
+
