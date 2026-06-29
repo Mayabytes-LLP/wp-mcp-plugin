@@ -4,7 +4,7 @@ Tags: mcp, elementor, ai, figma, wordpress
 Requires at least: 6.9
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 0.1.1
+Stable tag: 0.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -46,10 +46,16 @@ The plugin exposes MCP tools -- you need an MCP client to call them. The tools a
 
 == Changelog ==
 
+= 0.1.2 =
+* Fix: get-elementor-global-settings now returns an empty object for breakpoints instead of null when the kit has no viewport settings configured.
+
 = 0.1.1 =
+* Fix: null-safe handling for Elementor global settings, tool schemas, and SSE transport improvements.
+
+= 0.1.0 =
 * Initial release -- MCP server with Elementor page, widget, element, and settings tools.
 
 == Upgrade Notice ==
 
 = 0.1.1 =
-Initial release.
+Bug fix release.

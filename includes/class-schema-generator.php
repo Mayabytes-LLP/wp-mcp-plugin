@@ -127,7 +127,7 @@ class SchemaGenerator {
 				'mobile'  => $kit_settings['viewport_mobile'] ?? 767,
 				'tablet'  => $kit_settings['viewport_md'] ?? 1024,
 				'desktop' => null,
-			) : null,
+			) : array(),
 		);
 	}
 
