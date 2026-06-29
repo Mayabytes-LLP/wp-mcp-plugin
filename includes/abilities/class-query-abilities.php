@@ -2,6 +2,7 @@
 
 namespace WpMcp\Abilities;
 
+use WpMcp\AbilitySchemas;
 use WpMcp\SchemaGenerator;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -74,22 +75,23 @@ class Query {
 						'minimum'     => 1,
 					),
 				),
+				'additionalProperties' => false,
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
 				'properties' => array(
-					'pages'       => array( 'type' => 'array' ),
+					'pages'       => array(
+						'type'  => 'array',
+						'items' => AbilitySchemas::page_summary_item(),
+					),
 					'total'       => array( 'type' => 'integer' ),
 					'total_pages' => array( 'type' => 'integer' ),
 				),
+				'required'   => array( 'pages', 'total', 'total_pages' ),
 			),
 			'meta'              => array(
 				'mcp'         => array( 'public' => true ),
-				'annotations' => array(
-					'readonly'    => true,
-					'destructive' => false,
-					'idempotent'  => true,
-				),
+				'annotations' => AbilitySchemas::annotations( true, false, true ),
 			),
 		) );
 	}
@@ -156,28 +158,29 @@ class Query {
 						'description' => 'The page slug (alternative to post_id).',
 					),
 				),
-				'required'   => array(),
+				'anyOf' => array(
+					array( 'required' => array( 'post_id' ) ),
+					array( 'required' => array( 'slug' ) ),
+				),
+				'additionalProperties' => false,
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
 				'properties' => array(
-					'id'                => array( 'type' => 'integer' ),
-					'title'             => array( 'type' => 'string' ),
-					'slug'              => array( 'type' => 'string' ),
-					'url'               => array( 'type' => 'string' ),
-					'status'            => array( 'type' => 'string' ),
-					'template'          => array( 'type' => 'string' ),
+					'id'                  => array( 'type' => 'integer' ),
+					'title'               => array( 'type' => 'string' ),
+					'slug'                => array( 'type' => 'string' ),
+					'url'                 => array( 'type' => 'string' ),
+					'status'              => array( 'type' => 'string' ),
+					'template'            => array( 'type' => 'string' ),
 					'elementor_edit_mode' => array( 'type' => 'string' ),
-					'elementor_data'    => array( 'type' => 'array' ),
+					'elementor_data'      => AbilitySchemas::elementor_data_array(),
 				),
+				'required'   => array( 'id', 'title', 'slug', 'url', 'status', 'template', 'elementor_edit_mode', 'elementor_data' ),
 			),
 			'meta'              => array(
 				'mcp'         => array( 'public' => true ),
-				'annotations' => array(
-					'readonly'    => true,
-					'destructive' => false,
-					'idempotent'  => true,
-				),
+				'annotations' => AbilitySchemas::annotations( true, false, true ),
 			),
 		) );
 	}
@@ -227,20 +230,21 @@ class Query {
 						'description' => 'Filter widgets by category slug (e.g. basic, general, pro-elements).',
 					),
 				),
+				'additionalProperties' => false,
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
 				'properties' => array(
-					'widgets' => array( 'type' => 'array' ),
+					'widgets' => array(
+						'type'  => 'array',
+						'items' => AbilitySchemas::widget_info_item(),
+					),
 				),
+				'required'   => array( 'widgets' ),
 			),
 			'meta'              => array(
 				'mcp'         => array( 'public' => true ),
-				'annotations' => array(
-					'readonly'    => true,
-					'destructive' => false,
-					'idempotent'  => true,
-				),
+				'annotations' => AbilitySchemas::annotations( true, false, true ),
 			),
 		) );
 	}
@@ -275,21 +279,22 @@ class Query {
 						'description' => 'The Elementor widget type key (e.g. heading, button, image).',
 					),
 				),
-				'required'   => array( 'widget_type' ),
+				'required'             => array( 'widget_type' ),
+				'additionalProperties' => false,
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
 				'properties' => array(
-					'schema' => array( 'type' => 'object' ),
+					'schema' => array(
+						'type'                 => 'object',
+						'additionalProperties' => true,
+					),
 				),
+				'required'   => array( 'schema' ),
 			),
 			'meta'              => array(
 				'mcp'         => array( 'public' => true ),
-				'annotations' => array(
-					'readonly'    => true,
-					'destructive' => false,
-					'idempotent'  => true,
-				),
+				'annotations' => AbilitySchemas::annotations( true, false, true ),
 			),
 		) );
 	}
@@ -322,20 +327,21 @@ class Query {
 						'description' => 'Filter by template type (section, page, header, footer, single, archive, etc.).',
 					),
 				),
+				'additionalProperties' => false,
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
 				'properties' => array(
-					'templates' => array( 'type' => 'array' ),
+					'templates' => array(
+						'type'  => 'array',
+						'items' => AbilitySchemas::template_item(),
+					),
 				),
+				'required'   => array( 'templates' ),
 			),
 			'meta'              => array(
 				'mcp'         => array( 'public' => true ),
-				'annotations' => array(
-					'readonly'    => true,
-					'destructive' => false,
-					'idempotent'  => true,
-				),
+				'annotations' => AbilitySchemas::annotations( true, false, true ),
 			),
 		) );
 	}
@@ -383,25 +389,29 @@ class Query {
 			'execute_callback'  => array( $this, 'execute_get_global_settings' ),
 			'permission_callback' => array( $this, 'check_read_permission' ),
 			'input_schema'      => array(
-				'type'       => 'object',
-				'properties' => array(),
+				'type'                 => 'object',
+				'properties'           => array(),
+				'additionalProperties' => false,
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
 				'properties' => array(
-					'colors'       => array( 'type' => 'array' ),
-					'typography'   => array( 'type' => 'array' ),
+					'colors'          => array(
+						'type'  => 'array',
+						'items' => AbilitySchemas::kit_color_item(),
+					),
+					'typography'      => array(
+						'type'  => 'array',
+						'items' => AbilitySchemas::kit_typography_item(),
+					),
 					'container_width' => array( 'type' => array( 'object', 'null' ) ),
-					'breakpoints'  => array( 'type' => array( 'object', 'null' ) ),
+					'breakpoints'     => array( 'type' => array( 'object', 'null' ) ),
 				),
+				'required'   => array( 'colors', 'typography', 'container_width', 'breakpoints' ),
 			),
 			'meta'              => array(
 				'mcp'         => array( 'public' => true ),
-				'annotations' => array(
-					'readonly'    => true,
-					'destructive' => false,
-					'idempotent'  => true,
-				),
+				'annotations' => AbilitySchemas::annotations( true, false, true ),
 			),
 		) );
 	}

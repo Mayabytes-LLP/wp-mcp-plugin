@@ -21,3 +21,14 @@ phpunit.xml
 # vendor/ is intentionally committed — this is a drop-in plugin and
 # end users must not need Composer. Do NOT add vendor/ here.
 composer.phar
+
+# node_modules/ is intentionally committed — this is a drop-in plugin and
+# end users must not need Node.js. Do NOT add node_modules/ here.
+node_modules/
+
+# Environment variables
+.env.*
+
+.cursor/
+.cursor/mcp.json
+opencode.jsonc

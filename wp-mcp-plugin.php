@@ -120,9 +120,13 @@ function wp_mcp_init(): void {
 
 	require_once WP_MCP_PLUGIN_DIR . 'includes/instructions.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-docs.php';
+	require_once WP_MCP_PLUGIN_DIR . 'includes/class-mcp-hardening.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-api-key.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-schema-generator.php';
+	require_once WP_MCP_PLUGIN_DIR . 'includes/class-ability-schemas.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-preview-token.php';
+	require_once WP_MCP_PLUGIN_DIR . 'includes/class-tool-registry.php';
+	require_once WP_MCP_PLUGIN_DIR . 'includes/class-enabled-tools.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-admin-page.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/abilities/class-query-abilities.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/abilities/class-page-abilities.php';
@@ -132,6 +136,12 @@ function wp_mcp_init(): void {
 	require_once WP_MCP_PLUGIN_DIR . 'includes/abilities/class-render-abilities.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-plugin.php';
 	\WpMcp\Plugin::instance();
+
+	$sync_version = get_option( 'wp_mcp_tools_sync_version', '' );
+	if ( $sync_version !== WP_MCP_PLUGIN_VERSION ) {
+		\WpMcp\EnabledTools::sync();
+		update_option( 'wp_mcp_tools_sync_version', WP_MCP_PLUGIN_VERSION );
+	}
 
 	add_action( 'pre_get_posts', array( '\WpMcp\PreviewToken', 'maybe_grant_access' ), 1, 1 );
 }
@@ -146,28 +156,14 @@ function wp_mcp_activate(): void {
 		update_option( 'wp_mcp_server_enabled', true );
 	}
 
-	$default_tools = array(
-		'wp-mcp/list-pages',
-		'wp-mcp/get-page',
-		'wp-mcp/list-elementor-widgets',
-		'wp-mcp/get-elementor-widget-schema',
-		'wp-mcp/list-elementor-templates',
-		'wp-mcp/get-elementor-global-settings',
-		'wp-mcp/create-page',
-		'wp-mcp/update-page-elementor-data',
-		'wp-mcp/delete-page',
-		'wp-mcp/add-container',
-		'wp-mcp/add-widget',
-		'wp-mcp/update-element',
-		'wp-mcp/remove-element',
-		'wp-mcp/batch-update',
-		'wp-mcp/update-elementor-global-settings',
-		'wp-mcp/get-plugin-status',
-		'wp-mcp/visual-compare-preview',
-	);
+	$default_tools = \WpMcp\ToolRegistry::get_all_slugs();
 
 	if ( false === get_option( 'wp_mcp_enabled_tools' ) ) {
 		update_option( 'wp_mcp_enabled_tools', $default_tools );
+	}
+
+	if ( false === get_option( 'wp_mcp_tool_roster' ) ) {
+		update_option( 'wp_mcp_tool_roster', $default_tools );
 	}
 }
 

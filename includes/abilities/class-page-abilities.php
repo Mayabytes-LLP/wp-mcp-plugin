@@ -2,6 +2,7 @@
 
 namespace WpMcp\Abilities;
 
+use WpMcp\AbilitySchemas;
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -78,27 +79,25 @@ class Page {
 						'type'        => 'string',
 						'description' => 'Page template filename (e.g. elementor_canvas, elementor_header_footer).',
 					),
-					'initial_elementor_data' => array(
-						'type'        => 'array',
-						'description' => 'Optional initial Elementor content as a JSON array of elements.',
+					'initial_elementor_data' => array_merge(
+						array( 'description' => 'Optional initial Elementor content as a JSON array of elements.' ),
+						AbilitySchemas::elementor_data_array()
 					),
 				),
+				'additionalProperties' => false,
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
 				'properties' => array(
-					'post_id' => array( 'type' => 'integer' ),
-					'url'     => array( 'type' => 'string' ),
+					'post_id'  => array( 'type' => 'integer' ),
+					'url'      => array( 'type' => 'string' ),
 					'edit_url' => array( 'type' => 'string' ),
 				),
+				'required'   => array( 'post_id', 'url', 'edit_url' ),
 			),
 			'meta'              => array(
 				'mcp'         => array( 'public' => true ),
-				'annotations' => array(
-					'readonly'    => false,
-					'destructive' => false,
-					'idempotent'  => false,
-				),
+				'annotations' => AbilitySchemas::annotations( false, false, false ),
 			),
 		) );
 	}
@@ -163,27 +162,25 @@ class Page {
 						'type'        => 'integer',
 						'description' => 'The page post ID to update.',
 					),
-					'elementor_data' => array(
-						'type'        => 'array',
-						'description' => 'Complete Elementor content as a JSON array of elements.',
+					'elementor_data' => array_merge(
+						array( 'description' => 'Complete Elementor content as a JSON array of elements.' ),
+						AbilitySchemas::elementor_data_array()
 					),
 				),
-				'required'   => array( 'post_id', 'elementor_data' ),
+				'required'             => array( 'post_id', 'elementor_data' ),
+				'additionalProperties' => false,
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
 				'properties' => array(
-					'success'  => array( 'type' => 'boolean' ),
-					'post_id'  => array( 'type' => 'integer' ),
+					'success' => array( 'type' => 'boolean' ),
+					'post_id' => array( 'type' => 'integer' ),
 				),
+				'required'   => array( 'success', 'post_id' ),
 			),
 			'meta'              => array(
 				'mcp'         => array( 'public' => true ),
-				'annotations' => array(
-					'readonly'    => false,
-					'destructive' => true,
-					'idempotent'  => false,
-				),
+				'annotations' => AbilitySchemas::annotations( false, true, false ),
 			),
 		) );
 	}
@@ -219,7 +216,7 @@ class Page {
 
 		wp_register_ability( 'wp-mcp/delete-page', array(
 			'label'             => __( 'Delete Page', 'wp-mcp-plugin' ),
-			'description'       => __( 'Trash a WordPress page. The page can be restored from trash within 30 days. Does not permanently delete.', 'wp-mcp-plugin' ),
+			'description'       => __( 'Trash a WordPress page by default. The page can be restored from trash within 30 days. Set force to true to permanently delete (skip trash).', 'wp-mcp-plugin' ),
 			'category'          => 'wp-mcp-plugin',
 			'execute_callback'  => array( $this, 'execute_delete_page' ),
 			'permission_callback' => array( $this, 'check_delete_permission' ),
@@ -235,7 +232,8 @@ class Page {
 						'description' => 'If true, permanently delete (skip trash). Default: false.',
 					),
 				),
-				'required'   => array( 'post_id' ),
+				'required'             => array( 'post_id' ),
+				'additionalProperties' => false,
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
@@ -243,14 +241,11 @@ class Page {
 					'success' => array( 'type' => 'boolean' ),
 					'post_id' => array( 'type' => 'integer' ),
 				),
+				'required'   => array( 'success', 'post_id' ),
 			),
 			'meta'              => array(
 				'mcp'         => array( 'public' => true ),
-				'annotations' => array(
-					'readonly'    => false,
-					'destructive' => true,
-					'idempotent'  => true,
-				),
+				'annotations' => AbilitySchemas::annotations( false, true, false ),
 			),
 		) );
 	}

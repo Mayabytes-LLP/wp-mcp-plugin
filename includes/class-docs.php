@@ -80,7 +80,7 @@ class Docs {
 			'execute_callback'     => function () {
 				return wp_mcp_read_doc_file( 'docs/elementor-data-structure.md' );
 			},
-			'permission_callback'  => '__return_true',
+			'permission_callback'  => array( ApiKey::class, 'check_ability_permission' ),
 			'meta'                 => array(
 				'mcp' => array(
 					'type'     => 'resource',
@@ -100,7 +100,7 @@ class Docs {
 			'execute_callback'     => function () {
 				return wp_mcp_read_doc_file( 'docs/container-system.md' );
 			},
-			'permission_callback'  => '__return_true',
+			'permission_callback'  => array( ApiKey::class, 'check_ability_permission' ),
 			'meta'                 => array(
 				'mcp' => array(
 					'type'     => 'resource',
@@ -120,7 +120,7 @@ class Docs {
 			'execute_callback'     => function () {
 				return wp_mcp_read_doc_file( 'docs/workflow.md' );
 			},
-			'permission_callback'  => '__return_true',
+			'permission_callback'  => array( ApiKey::class, 'check_ability_permission' ),
 			'meta'                 => array(
 				'mcp' => array(
 					'type'     => 'resource',
@@ -140,7 +140,7 @@ class Docs {
 			'execute_callback'     => function () {
 				return wp_mcp_read_doc_file( 'docs/global-settings.md' );
 			},
-			'permission_callback'  => '__return_true',
+			'permission_callback'  => array( ApiKey::class, 'check_ability_permission' ),
 			'meta'                 => array(
 				'mcp' => array(
 					'type'     => 'resource',
@@ -160,7 +160,7 @@ class Docs {
 			'execute_callback'     => function () {
 				return wp_mcp_read_doc_file( 'docs/widget-types.md' );
 			},
-			'permission_callback'  => '__return_true',
+			'permission_callback'  => array( ApiKey::class, 'check_ability_permission' ),
 			'meta'                 => array(
 				'mcp' => array(
 					'type'     => 'resource',
@@ -180,7 +180,7 @@ class Docs {
 			'execute_callback'     => function () {
 				return wp_mcp_read_doc_file( 'docs/common-patterns.md' );
 			},
-			'permission_callback'  => '__return_true',
+			'permission_callback'  => array( ApiKey::class, 'check_ability_permission' ),
 			'meta'                 => array(
 				'mcp' => array(
 					'type'     => 'resource',
@@ -200,7 +200,7 @@ class Docs {
 			'execute_callback'     => function () {
 				return wp_mcp_read_doc_file( 'docs/figma-conversion.md' );
 			},
-			'permission_callback'  => '__return_true',
+			'permission_callback'  => array( ApiKey::class, 'check_ability_permission' ),
 			'meta'                 => array(
 				'mcp' => array(
 					'type'     => 'resource',
@@ -220,7 +220,7 @@ class Docs {
 			'execute_callback'     => function () {
 				return wp_mcp_read_doc_file( 'docs/best-practices.md' );
 			},
-			'permission_callback'  => '__return_true',
+			'permission_callback'  => array( ApiKey::class, 'check_ability_permission' ),
 			'meta'                 => array(
 				'mcp' => array(
 					'type'     => 'resource',

@@ -78,9 +78,10 @@ class ApiKey {
 	/**
 	 * Transport permission callback for the MCP server.
 	 *
-	 * Reads the X-WP-MCP-Key header and validates it against the stored hash.
-	 * On success, sets the current WordPress user to an administrator so the
-	 * mcp-adapter can create sessions (which requires a logged-in user).
+	 * Accepts the API key via X-WP-MCP-Key (primary) or Authorization: Bearer
+	 * (fallback for clients that only support standard auth headers). On success,
+	 * sets the current WordPress user to a service account so the mcp-adapter
+	 * can create sessions (which requires a logged-in user).
 	 *
 	 * @param \WP_REST_Request|null $request The incoming REST request.
 	 * @return bool|\WP_Error True if authenticated, WP_Error on failure.
@@ -89,46 +90,120 @@ class ApiKey {
 		if ( ! $this->is_configured() ) {
 			return new \WP_Error(
 				'wp_mcp_no_key',
-				__( 'MCP server has no API key configured.', 'wp-mcp-plugin' )
+				__( 'MCP server has no API key configured.', 'wp-mcp-plugin' ),
+				array( 'status' => 503 )
 			);
 		}
 
-		$provided_key = '';
-
-		if ( $request instanceof \WP_REST_Request ) {
-			$provided_key = $request->get_header( 'X-WP-MCP-Key' );
+		if ( McpHardening::is_auth_rate_limited() ) {
+			return new \WP_Error(
+				'wp_mcp_rate_limited',
+				__( 'Too many failed authentication attempts. Try again later.', 'wp-mcp-plugin' ),
+				array( 'status' => 429 )
+			);
 		}
 
-		if ( empty( $provided_key ) ) {
+		$provided_key = $this->extract_key_from_request( $request );
+
+		if ( '' === $provided_key ) {
 			return new \WP_Error(
 				'wp_mcp_missing_key',
-				__( 'Missing X-WP-MCP-Key header.', 'wp-mcp-plugin' )
+				__( 'Missing API key. Send X-WP-MCP-Key or Authorization: Bearer <key>.', 'wp-mcp-plugin' ),
+				array( 'status' => 401 )
 			);
 		}
 
 		if ( ! $this->verify( $provided_key ) ) {
+			McpHardening::record_auth_failure();
+
 			return new \WP_Error(
 				'wp_mcp_invalid_key',
-				__( 'Invalid API key.', 'wp-mcp-plugin' )
+				__( 'Invalid API key.', 'wp-mcp-plugin' ),
+				array( 'status' => 401 )
 			);
 		}
 
-		// Authenticate as an admin user so mcp-adapter can create sessions.
-		// get_current_user_id() must return non-zero for session creation to succeed.
-		$admin_id = $this->get_admin_user_id();
-		if ( $admin_id ) {
-			wp_set_current_user( $admin_id );
+		McpHardening::clear_auth_failures();
+
+		// mcp-adapter session creation requires a logged-in user.
+		$service_user_id = $this->get_service_user_id();
+		if ( $service_user_id > 0 ) {
+			wp_set_current_user( $service_user_id );
 		}
 
 		return true;
 	}
 
 	/**
-	 * Find an administrator user ID for MCP authentication.
+	 * Permission callback for MCP abilities (tools and resources).
+	 *
+	 * Abilities run only after transport auth has set a service user.
+	 *
+	 * @return bool
+	 */
+	public static function check_ability_permission(): bool {
+		return get_current_user_id() > 0;
+	}
+
+	/**
+	 * Extract the API key from supported request headers.
+	 *
+	 * Supports X-WP-MCP-Key (documented) and Authorization: Bearer (common
+	 * across MCP clients that expect OAuth-style transport auth).
+	 *
+	 * @param \WP_REST_Request|null $request The incoming REST request.
+	 * @return string Plaintext key, or empty string when absent.
+	 */
+	private function extract_key_from_request( $request ): string {
+		if ( ! $request instanceof \WP_REST_Request ) {
+			return '';
+		}
+
+		$header_key = $request->get_header( 'X-WP-MCP-Key' );
+		if ( is_string( $header_key ) && '' !== $header_key ) {
+			return trim( $header_key );
+		}
+
+		$authorization = $request->get_header( 'Authorization' );
+		if ( is_string( $authorization ) && preg_match( '/^Bearer\s+(.+)$/i', $authorization, $matches ) ) {
+			return trim( $matches[1] );
+		}
+
+		return '';
+	}
+
+	/**
+	 * Resolve the WordPress user ID for MCP tool execution.
+	 *
+	 * Filterable via `wp_mcp_authenticated_user_id`. Defaults to the first
+	 * administrator (required for manage_options tools like global settings).
+	 *
+	 * @return int User ID, or 0 if no suitable user found.
+	 */
+	private function get_service_user_id(): int {
+		/**
+		 * Filter the WordPress user ID used for MCP tool execution.
+		 *
+		 * The user must have the capabilities required by the enabled tools
+		 * (at minimum edit_pages; manage_options for global settings tools).
+		 *
+		 * @param int $user_id Default 0 — resolved to first administrator below.
+		 */
+		$user_id = (int) apply_filters( 'wp_mcp_authenticated_user_id', 0 );
+
+		if ( $user_id > 0 && get_userdata( $user_id ) ) {
+			return $user_id;
+		}
+
+		return $this->get_default_admin_user_id();
+	}
+
+	/**
+	 * Find the first administrator user ID for MCP authentication.
 	 *
 	 * @return int User ID, or 0 if no admin found.
 	 */
-	private function get_admin_user_id(): int {
+	private function get_default_admin_user_id(): int {
 		$users = get_users(
 			array(
 				'role'    => 'administrator',

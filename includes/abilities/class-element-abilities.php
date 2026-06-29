@@ -2,6 +2,8 @@
 
 namespace WpMcp\Abilities;
 
+use WpMcp\AbilitySchemas;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -171,7 +173,8 @@ class Element {
 						'description' => 'Container settings (flex_direction, content_width, align_items, justify_content, gap, padding, margin, background_color, etc.).',
 					),
 				),
-				'required'   => array( 'post_id' ),
+				'required'             => array( 'post_id' ),
+				'additionalProperties' => false,
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
@@ -179,14 +182,11 @@ class Element {
 					'element_id' => array( 'type' => 'string' ),
 					'post_id'    => array( 'type' => 'integer' ),
 				),
+				'required'   => array( 'element_id', 'post_id' ),
 			),
 			'meta'              => array(
 				'mcp'         => array( 'public' => true ),
-				'annotations' => array(
-					'readonly'    => false,
-					'destructive' => false,
-					'idempotent'  => false,
-				),
+				'annotations' => AbilitySchemas::annotations( false, false, false ),
 			),
 		) );
 	}
@@ -289,7 +289,8 @@ class Element {
 						'description' => 'Widget settings. Use get-elementor-widget-schema to see valid properties for this widget_type.',
 					),
 				),
-				'required'   => array( 'post_id', 'parent_id', 'widget_type' ),
+				'required'             => array( 'post_id', 'parent_id', 'widget_type' ),
+				'additionalProperties' => false,
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
@@ -298,14 +299,11 @@ class Element {
 					'post_id'     => array( 'type' => 'integer' ),
 					'widget_type' => array( 'type' => 'string' ),
 				),
+				'required'   => array( 'element_id', 'post_id', 'widget_type' ),
 			),
 			'meta'              => array(
 				'mcp'         => array( 'public' => true ),
-				'annotations' => array(
-					'readonly'    => false,
-					'destructive' => false,
-					'idempotent'  => false,
-				),
+				'annotations' => AbilitySchemas::annotations( false, false, false ),
 			),
 		) );
 	}
@@ -409,7 +407,8 @@ class Element {
 						'description' => 'New settings to merge into the element. Only changed properties need to be provided.',
 					),
 				),
-				'required'   => array( 'post_id', 'element_id', 'settings' ),
+				'required'             => array( 'post_id', 'element_id', 'settings' ),
+				'additionalProperties' => false,
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
@@ -417,14 +416,11 @@ class Element {
 					'element_id' => array( 'type' => 'string' ),
 					'post_id'    => array( 'type' => 'integer' ),
 				),
+				'required'   => array( 'element_id', 'post_id' ),
 			),
 			'meta'              => array(
 				'mcp'         => array( 'public' => true ),
-				'annotations' => array(
-					'readonly'    => false,
-					'destructive' => false,
-					'idempotent'  => false,
-				),
+				'annotations' => AbilitySchemas::annotations( false, true, false ),
 			),
 		) );
 	}
@@ -482,7 +478,8 @@ class Element {
 						'description' => 'The element ID (7-char hex) to remove.',
 					),
 				),
-				'required'   => array( 'post_id', 'element_id' ),
+				'required'             => array( 'post_id', 'element_id' ),
+				'additionalProperties' => false,
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
@@ -491,14 +488,11 @@ class Element {
 					'element_id' => array( 'type' => 'string' ),
 					'post_id'    => array( 'type' => 'integer' ),
 				),
+				'required'   => array( 'success', 'element_id', 'post_id' ),
 			),
 			'meta'              => array(
 				'mcp'         => array( 'public' => true ),
-				'annotations' => array(
-					'readonly'    => false,
-					'destructive' => true,
-					'idempotent'  => true,
-				),
+				'annotations' => AbilitySchemas::annotations( false, true, false ),
 			),
 		) );
 	}
@@ -548,6 +542,7 @@ class Element {
 					'operations' => array(
 						'type'        => 'array',
 						'description' => 'Array of operations. Each operation: { element_id (string), settings (object) }.',
+						'minItems'    => 1,
 						'items'       => array(
 							'type'       => 'object',
 							'properties' => array(
@@ -558,7 +553,8 @@ class Element {
 						),
 					),
 				),
-				'required'   => array( 'post_id', 'operations' ),
+				'required'             => array( 'post_id', 'operations' ),
+				'additionalProperties' => false,
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
@@ -566,16 +562,16 @@ class Element {
 					'success'     => array( 'type' => 'boolean' ),
 					'post_id'     => array( 'type' => 'integer' ),
 					'updated'     => array( 'type' => 'integer' ),
-					'failed'      => array( 'type' => 'array' ),
+					'failed'      => array(
+						'type'  => 'array',
+						'items' => AbilitySchemas::batch_failure_item(),
+					),
 				),
+				'required'   => array( 'success', 'post_id', 'updated', 'failed' ),
 			),
 			'meta'              => array(
 				'mcp'         => array( 'public' => true ),
-				'annotations' => array(
-					'readonly'    => false,
-					'destructive' => false,
-					'idempotent'  => false,
-				),
+				'annotations' => AbilitySchemas::annotations( false, true, false ),
 			),
 		) );
 	}
@@ -624,7 +620,7 @@ class Element {
 		}
 
 		return array(
-			'success' => true,
+			'success' => $updated > 0,
 			'post_id' => $post_id,
 			'updated' => $updated,
 			'failed'  => $failed,

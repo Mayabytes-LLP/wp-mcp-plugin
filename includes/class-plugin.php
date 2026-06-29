@@ -19,6 +19,7 @@ class Plugin {
 
 	private AdminPage $admin_page;
 	private ApiKey $api_key;
+	private McpHardening $mcp_hardening;
 	private SchemaGenerator $schema_generator;
 
 	/** @var string[] Full list of ability slugs registered by this plugin. */
@@ -40,6 +41,7 @@ class Plugin {
 	private function init(): void {
 		$this->admin_page       = new AdminPage();
 		$this->api_key          = new ApiKey();
+		$this->mcp_hardening    = new McpHardening();
 		$this->schema_generator = new SchemaGenerator();
 
 		// Admin UI
@@ -67,6 +69,8 @@ class Plugin {
 
 		// Strip wp-mcp- prefix from MCP tool names so they appear clean (e.g. "list-pages" not "wp-mcp-list-pages").
 		add_filter( 'mcp_adapter_tool_name', array( $this, 'strip_tool_name_prefix' ), 10, 2 );
+
+		$this->mcp_hardening->register();
 	}
 
 	public function register_category(): void {
@@ -142,27 +146,7 @@ class Plugin {
 	 * @return string[] Filtered list.
 	 */
 	public function filter_disabled_tools( array $ability_names ): array {
-		$enabled_tools = get_option( 'wp_mcp_enabled_tools', $ability_names );
-		if ( ! is_array( $enabled_tools ) ) {
-			return $ability_names;
-		}
-
-		// Migrate renamed tool slugs (pre-v0.2.0) to current naming.
-		$renamed = array(
-			'wp-mcp/render-page' => 'wp-mcp/visual-compare-preview',
-		);
-		$updated = false;
-		foreach ( $renamed as $old => $new ) {
-			$pos = array_search( $old, $enabled_tools, true );
-			if ( false !== $pos ) {
-				$enabled_tools[ $pos ] = $new;
-				$updated = true;
-			}
-		}
-		if ( $updated ) {
-			update_option( 'wp_mcp_enabled_tools', $enabled_tools );
-		}
-
+		$enabled_tools = EnabledTools::get_enabled();
 		return array_values( array_intersect( $ability_names, $enabled_tools ) );
 	}
 }

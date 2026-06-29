@@ -2,6 +2,8 @@
 
 namespace WpMcp\Abilities;
 
+use WpMcp\AbilitySchemas;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -43,26 +45,30 @@ class Settings {
 					'colors'            => array(
 						'type'        => 'array',
 						'description' => 'Updated custom colors array. Each item: { _id (string), title (string), color (hex string) }.',
+						'items'       => AbilitySchemas::kit_color_item(),
 					),
 					'typography'        => array(
 						'type'        => 'array',
 						'description' => 'Updated custom typography array. Each item: { _id (string), title (string), typography_* properties }.',
+						'items'       => AbilitySchemas::kit_typography_item(),
 					),
 				),
+				'anyOf' => array(
+					array( 'required' => array( 'colors' ) ),
+					array( 'required' => array( 'typography' ) ),
+				),
+				'additionalProperties' => false,
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
 				'properties' => array(
 					'success' => array( 'type' => 'boolean' ),
 				),
+				'required'   => array( 'success' ),
 			),
 			'meta'              => array(
 				'mcp'         => array( 'public' => true ),
-				'annotations' => array(
-					'readonly'    => false,
-					'destructive' => true,
-					'idempotent'  => false,
-				),
+				'annotations' => AbilitySchemas::annotations( false, true, false ),
 			),
 		) );
 	}
@@ -172,8 +178,8 @@ class Settings {
 			'execute_callback'  => array( $this, 'execute_get_plugin_status' ),
 			'permission_callback' => array( $this, 'check_settings_permission' ),
 			'input_schema'      => array(
-				'type'       => 'object',
-				'properties' => array(),
+				'type'                 => 'object',
+				'additionalProperties' => false,
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
@@ -186,14 +192,19 @@ class Settings {
 					'enabled_tools_count'      => array( 'type' => 'integer' ),
 					'plugin_version'           => array( 'type' => 'string' ),
 				),
+				'required'   => array(
+					'elementor_version',
+					'elementor_pro_version',
+					'mcp_adapter_active',
+					'api_key_configured',
+					'server_enabled',
+					'enabled_tools_count',
+					'plugin_version',
+				),
 			),
 			'meta'              => array(
 				'mcp'         => array( 'public' => true ),
-				'annotations' => array(
-					'readonly'    => true,
-					'destructive' => false,
-					'idempotent'  => true,
-				),
+				'annotations' => AbilitySchemas::annotations( true, false, true ),
 			),
 		) );
 	}

@@ -2,6 +2,7 @@
 
 namespace WpMcp\Abilities;
 
+use WpMcp\AbilitySchemas;
 use WpMcp\PreviewToken;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -77,6 +78,11 @@ class Render {
 						'default'     => 300,
 					),
 				),
+				'anyOf' => array(
+					array( 'required' => array( 'post_id' ) ),
+					array( 'required' => array( 'slug' ) ),
+				),
+				'additionalProperties' => false,
 			),
 			'output_schema'     => array(
 				'type'       => 'object',
@@ -91,27 +97,28 @@ class Render {
 					'css_ready'           => array( 'type' => 'boolean' ),
 					'elements'            => array(
 						'type'  => 'array',
-						'items' => array(
-							'type'       => 'object',
-							'properties' => array(
-								'element_id' => array( 'type' => 'string' ),
-								'selector'   => array( 'type' => 'string' ),
-								'elType'     => array( 'type' => 'string' ),
-								'widgetType' => array( 'type' => 'string' ),
-							),
-						),
+						'items' => AbilitySchemas::preview_element_item(),
 					),
 					'token_expires_at'    => array( 'type' => 'string', 'format' => 'date-time' ),
 					'token_expires_unix'  => array( 'type' => 'integer' ),
 				),
+				'required'   => array(
+					'post_id',
+					'page_url',
+					'preview_url',
+					'page_status',
+					'page_title',
+					'has_elementor_data',
+					'element_count',
+					'css_ready',
+					'elements',
+					'token_expires_at',
+					'token_expires_unix',
+				),
 			),
 			'meta'              => array(
 				'mcp'         => array( 'public' => true ),
-				'annotations' => array(
-					'readonly'    => true,
-					'destructive' => false,
-					'idempotent'  => true,
-				),
+				'annotations' => AbilitySchemas::annotations( true, false, true ),
 			),
 		) );
 	}

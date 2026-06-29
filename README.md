@@ -32,7 +32,7 @@ The plugin gracefully detects a missing Elementor install and shows an admin not
 2. Download `wp-mcp-plugin-0.1.0.zip` from the [latest release](https://github.com/Mayabytes-LLP/wp-mcp-plugin/releases).
 3. WordPress Admin → **Plugins → Add New → Upload Plugin** → choose the zip → **Install Now**.
 4. Activate the plugin.
-5. Go to **Settings → WP MCP**, generate/copy your API key, and ensure the MCP server is enabled.
+5. Go to **WP MCP** in the admin sidebar, generate/copy your API key, and ensure the MCP server is enabled. The admin page shows how many tools are exposed (enabled / total); new tools are auto-enabled on plugin updates, and you can use **Enable all tools** to reset visibility.
 
 ### From source
 
@@ -47,7 +47,30 @@ POST /wp-json/wp-mcp/mcp
 Header: X-WP-MCP-Key: <your-api-key>
 ```
 
-For OpenCode, add it as a remote MCP server in `opencode.jsonc`:
+Alternatively, clients that only support standard auth headers may send:
+
+```
+Authorization: Bearer <your-api-key>
+```
+
+The server negotiates MCP protocol version `2025-11-25` (with fallbacks to `2025-06-18` and `2024-11-05`) and uses session-based Streamable HTTP via the vendored mcp-adapter. After `initialize`, clients must include the `Mcp-Session-Id` header returned by the server on subsequent requests.
+
+For **Cursor**, add `.cursor/mcp.json` (project) or `~/.cursor/mcp.json` (global). Reference an environment variable so the config is safe to commit — Cursor does not support VS Code-style `inputs` / `${input:...}` prompts:
+
+```json
+{
+  "mcpServers": {
+    "wp-mcp": {
+      "url": "http://your-site.test/wp-json/wp-mcp/mcp",
+      "headers": { "X-WP-MCP-Key": "${env:WP_MCP_API_KEY}" }
+    }
+  }
+}
+```
+
+Set the key locally (`export WP_MCP_API_KEY="..."` in your shell profile), then restart Cursor.
+
+For **OpenCode**, add a remote MCP server in `opencode.jsonc`:
 
 ```jsonc
 {
@@ -55,7 +78,7 @@ For OpenCode, add it as a remote MCP server in `opencode.jsonc`:
     "wp-mcp": {
       "type": "remote",
       "url": "http://your-site.test/wp-json/wp-mcp/mcp",
-      "headers": { "X-WP-MCP-Key": "<your-api-key>" }
+      "headers": { "X-WP-MCP-Key": "${env:WP_MCP_API_KEY}" }
     }
   }
 }
@@ -91,7 +114,7 @@ For Claude Desktop / other MCP clients, follow the client's remote-server config
 
 - `visual-compare-preview` — generate an authenticated, time-limited preview URL for headless-browser screenshotting.
 
-All mutating tools require `manage_options` capability. The API key gates the transport; it does not authenticate as a WordPress user.
+All mutating tools require WordPress capabilities on the service user (typically `edit_pages` for page tools, `manage_options` for global settings). The API key gates the transport; on success the plugin authenticates as a service WordPress user (first administrator by default, overridable via the `wp_mcp_authenticated_user_id` filter) so the mcp-adapter can manage sessions and enforce ability-level capability checks.
 
 ## Figma → Elementor workflow
 
@@ -103,7 +126,7 @@ This plugin is designed to pair with a Figma MCP server. The typical loop:
 4. A headless browser (Playwright/Puppeteer) screenshots the preview.
 5. The screenshot is compared against the Figma design; differences are fixed with further `update-element` / `batch-update` calls.
 
-The plugin ships in-app documentation (container nesting limits, the full-bleed pattern, widget schemas) accessible to the MCP client as prompts.
+The plugin ships in-app documentation (container nesting limits, the full-bleed pattern, widget schemas) as MCP resources at `wp-mcp://docs/*`. The server's `instructions` field on initialize carries the concise workflow; read resources on demand via `resources/read`.
 
 ## Development
 

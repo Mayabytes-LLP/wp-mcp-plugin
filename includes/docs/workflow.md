@@ -34,4 +34,4 @@ It accepts an array of `{element_id, settings}` operations applied in one save:
 }
 ```
 
-Returns `{ "success": true, "post_id": 42, "updated": 3, "failed": [] }`. Check the `failed` array for any operations that couldn't be applied.
+Returns `{ "success": true, "post_id": 42, "updated": 3, "failed": [] }` when at least one operation applied. `success` is `false` when every operation failed (`updated` is 0). Check `failed` for operations that could not be applied.

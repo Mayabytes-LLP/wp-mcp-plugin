@@ -25,7 +25,7 @@ Each step ends on a checkable completion criterion. Run `schema-first`: discover
 4. **Discover widget types and schemas.** Call `list-elementor-widgets`, then `get-elementor-widget-schema` for each widget type you plan to use (`schema-first`). Completion: every widget type you will use is validated against its schema — no guessed property names.
 5. **Build the container tree.** Call `add-container` for the outer section, then inner layout containers. Apply `global-first`: reference global colors/typography via `__globals__` instead of hardcoded hex. Completion: the container tree is no deeper than 3 levels (`three-level max`) and every full-bleed background uses the two-container pattern.
 6. **Add widgets.** Call `add-widget` into containers. Completion: every widget's `settings` match the schema from step 4.
-7. **Batch styling tweaks.** Call `batch-update` for multiple `update-element` changes in one save (`batch-update`). Completion: the `failed` array in the response is empty.
+7. **Batch styling tweaks.** Call `batch-update` for multiple `update-element` changes in one save (`batch-update`). Completion: `success` is `true` and the `failed` array is empty.
 8. **Verify.** Call `get-page` and read the full `_elementor_data`. Completion: the rendered tree matches the intended layout and every nesting depth is ≤ 3.
 
 ## Figma conversion branch
@@ -43,10 +43,9 @@ When the user is converting a Figma design (the Figma MCP is wired in the harnes
 ## Installation (for skills-aware clients)
 
 This skill ships inside the wp-mcp-plugin. To activate it in a skills-aware client, copy `skills/elementor-page-builder/SKILL.md` into the client's skills directory:
+
 - OpenCode: `.opencode/skills/elementor-page-builder/SKILL.md` (or `~/.config/opencode/skills/`)
 - Claude Code: `.claude/skills/elementor-page-builder/SKILL.md`
 - Cursor: `.cursor/skills/elementor-page-builder/SKILL.md`
 
 The skill is client-agnostic; the MCP resources it points at work in any MCP-respecting client via `mcp_read_resource`.
-
-
