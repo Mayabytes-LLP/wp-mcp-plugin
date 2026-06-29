@@ -47,15 +47,9 @@ The plugin exposes MCP tools -- you need an MCP client to call them. The tools a
 == Changelog ==
 
 = 0.1.2 =
-* Fix: get-elementor-global-settings now returns an empty object for breakpoints instead of null when the kit has no viewport settings configured.
-
-= 0.1.1 =
-* Fix: null-safe handling for Elementor global settings, tool schemas, and SSE transport improvements.
-
-= 0.1.0 =
 * Initial release -- MCP server with Elementor page, widget, element, and settings tools.
 
 == Upgrade Notice ==
 
-= 0.1.1 =
-Bug fix release.
+= 0.1.2 =
+Initial release.
