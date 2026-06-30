@@ -21,6 +21,46 @@ if ( ! defined( 'ABSPATH' ) ) {
 class HttpTransportSse extends HttpTransport {
 
 	/**
+	 * Preserve WP_Error status codes from the transport permission callback.
+	 *
+	 * The vendored HttpTransport logs WP_Error and returns false, which WordPress
+	 * maps to a generic 401 rest_forbidden and drops 429 rate-limit responses.
+	 *
+	 * @param \WP_REST_Request<array<string, mixed>> $request The request object.
+	 * @return bool|\WP_Error
+	 */
+	public function check_permission( \WP_REST_Request $request ) {
+		$context           = new HttpRequestContext( $request );
+		$transport_context = $this->request_handler->get_transport_context();
+
+		if ( null === $transport_context->transport_permission_callback ) {
+			return parent::check_permission( $request );
+		}
+
+		try {
+			$result = call_user_func( $transport_context->transport_permission_callback, $context->request );
+
+			if ( is_wp_error( $result ) ) {
+				$transport_context->error_handler->log(
+					'Permission callback returned WP_Error: ' . $result->get_error_message(),
+					array( 'HttpTransportSse::check_permission' )
+				);
+
+				return $result;
+			}
+
+			return (bool) $result;
+		} catch ( \Throwable $e ) {
+			$transport_context->error_handler->log(
+				'Error in transport permission callback: ' . $e->getMessage(),
+				array( 'HttpTransportSse::check_permission' )
+			);
+
+			return false;
+		}
+	}
+
+	/**
 	 * @param \WP_REST_Request<array<string, mixed>> $request The request object.
 	 * @return \WP_REST_Response
 	 */
