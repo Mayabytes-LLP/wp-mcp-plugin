@@ -47,9 +47,17 @@ The plugin exposes MCP tools -- you need an MCP client to call them. The tools a
 == Changelog ==
 
 = 0.1.3 =
+* MCP protocol hardening: custom auth header to avoid OAuth endpoint probing, Retry-After on rate-limit, WP_Error passthrough from permission callbacks
+* AI harness compatibility: MCP prompts (build-landing-page, figma-to-elementor), get-server-guide tool for clients that skip initialize instructions
+* New regenerate-elementor-css tool for flushing stale CSS after writes
+* Draft-only visual comparison preview loop with published-page rejection
+* Docs refactored with data-driven registration and priority annotations
+* _recommended_resources returned in write tool outputs pointing at relevant docs
+
+= 0.1.2 =
 * Initial release -- MCP server with Elementor page, widget, element, and settings tools.
 
 == Upgrade Notice ==
 
 = 0.1.3 =
-Initial release.
+MCP hardening, AI harness prompts, CSS regeneration, and draft-only preview loop.
