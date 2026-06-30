@@ -95,6 +95,21 @@ class ApiKey {
 			);
 		}
 
+		$provided_key = $this->extract_key_from_request( $request );
+
+		// Valid key clears any IP lockout so fixing a stale client config works immediately.
+		if ( '' !== $provided_key && $this->verify( $provided_key ) ) {
+			McpHardening::clear_auth_failures();
+
+			// mcp-adapter session creation requires a logged-in user.
+			$service_user_id = $this->get_service_user_id();
+			if ( $service_user_id > 0 ) {
+				wp_set_current_user( $service_user_id );
+			}
+
+			return true;
+		}
+
 		if ( McpHardening::is_auth_rate_limited() ) {
 			return new \WP_Error(
 				'wp_mcp_rate_limited',
@@ -102,8 +117,6 @@ class ApiKey {
 				array( 'status' => 429 )
 			);
 		}
-
-		$provided_key = $this->extract_key_from_request( $request );
 
 		if ( '' === $provided_key ) {
 			return new \WP_Error(
@@ -113,25 +126,13 @@ class ApiKey {
 			);
 		}
 
-		if ( ! $this->verify( $provided_key ) ) {
-			McpHardening::record_auth_failure();
+		McpHardening::record_auth_failure();
 
-			return new \WP_Error(
-				'wp_mcp_invalid_key',
-				__( 'Invalid API key.', 'wp-mcp-plugin' ),
-				array( 'status' => 401 )
-			);
-		}
-
-		McpHardening::clear_auth_failures();
-
-		// mcp-adapter session creation requires a logged-in user.
-		$service_user_id = $this->get_service_user_id();
-		if ( $service_user_id > 0 ) {
-			wp_set_current_user( $service_user_id );
-		}
-
-		return true;
+		return new \WP_Error(
+			'wp_mcp_invalid_key',
+			__( 'Invalid API key.', 'wp-mcp-plugin' ),
+			array( 'status' => 401 )
+		);
 	}
 
 	/**

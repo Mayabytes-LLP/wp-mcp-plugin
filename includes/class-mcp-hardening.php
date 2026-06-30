@@ -75,7 +75,10 @@ class McpHardening {
 	}
 
 	/**
-	 * Add WWW-Authenticate on 401 so OAuth-aware MCP clients can surface auth hints.
+	 * Add MCP auth hints on failed transport responses.
+	 *
+	 * Uses a custom header instead of WWW-Authenticate: Bearer so OAuth-aware
+	 * MCP clients (Cursor) do not probe /.well-known/oauth-* on WordPress.
 	 *
 	 * @param \WP_REST_Response $response Response object.
 	 * @param \WP_REST_Server   $server   REST server.
@@ -87,14 +90,26 @@ class McpHardening {
 			return $response;
 		}
 
-		if ( ! $response instanceof \WP_REST_Response || 401 !== $response->get_status() ) {
+		if ( ! $response instanceof \WP_REST_Response ) {
 			return $response;
 		}
 
-		$response->header(
-			'WWW-Authenticate',
-			'Bearer realm="WP MCP", charset="UTF-8", error="invalid_token", error_description="Provide a valid API key via X-WP-MCP-Key or Authorization: Bearer"'
-		);
+		$status = $response->get_status();
+
+		if ( 429 === $status ) {
+			$retry_after = self::get_auth_lockout_remaining_seconds();
+			if ( $retry_after > 0 ) {
+				$response->header( 'Retry-After', (string) $retry_after );
+			}
+
+			return $response;
+		}
+
+		if ( 401 !== $status ) {
+			return $response;
+		}
+
+		$response->header( 'X-WP-MCP-Auth-Required', 'X-WP-MCP-Key' );
 
 		return $response;
 	}
@@ -142,6 +157,22 @@ class McpHardening {
 	 */
 	public static function clear_auth_failures(): void {
 		delete_transient( self::get_rate_limit_transient_key() );
+	}
+
+	/**
+	 * Seconds remaining on the current IP auth lockout, if any.
+	 *
+	 * @return int
+	 */
+	public static function get_auth_lockout_remaining_seconds(): int {
+		$transient_key = self::get_rate_limit_transient_key();
+		$timeout       = get_option( '_transient_timeout_' . $transient_key );
+
+		if ( false === $timeout ) {
+			return 0;
+		}
+
+		return max( 0, (int) $timeout - time() );
 	}
 
 	/**
