@@ -126,6 +126,7 @@ function wp_mcp_init(): void {
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-schema-generator.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-ability-schemas.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-preview-token.php';
+	require_once WP_MCP_PLUGIN_DIR . 'includes/class-elementor-css.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-tool-registry.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-enabled-tools.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-admin-page.php';
@@ -135,6 +136,7 @@ function wp_mcp_init(): void {
 	require_once WP_MCP_PLUGIN_DIR . 'includes/abilities/class-settings-abilities.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/abilities/class-ability-registrar.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/abilities/class-render-abilities.php';
+	require_once WP_MCP_PLUGIN_DIR . 'includes/abilities/class-guide-abilities.php';
 	require_once WP_MCP_PLUGIN_DIR . 'includes/class-plugin.php';
 	\WpMcp\Plugin::instance();
 

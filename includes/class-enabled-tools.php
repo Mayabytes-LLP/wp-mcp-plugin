@@ -26,7 +26,7 @@ class EnabledTools {
 	}
 
 	/**
-	 * Registered MCP tool ability slugs (excludes wp-mcp/docs-* resources).
+	 * Registered MCP tool ability slugs (excludes docs resources and prompts).
 	 *
 	 * @return string[]
 	 */
@@ -39,14 +39,38 @@ class EnabledTools {
 		$registered = \WP_Abilities_Registry::get_instance()->get_all_registered();
 
 		$slugs = array();
-		foreach ( array_keys( $registered ) as $name ) {
-			if ( str_starts_with( $name, 'wp-mcp/' ) && ! str_starts_with( $name, 'wp-mcp/docs-' ) ) {
-				$slugs[] = $name;
+		foreach ( $registered as $name => $ability ) {
+			if ( ! is_string( $name ) || ! str_starts_with( $name, 'wp-mcp/' ) ) {
+				continue;
 			}
+
+			if ( str_starts_with( $name, 'wp-mcp/docs-' ) ) {
+				continue;
+			}
+
+			if ( $ability instanceof \WP_Ability && self::is_non_tool_mcp_ability( $ability ) ) {
+				continue;
+			}
+
+			$slugs[] = $name;
 		}
 
 		sort( $slugs );
 		return $slugs;
+	}
+
+	/**
+	 * Whether an ability is exposed as an MCP resource or prompt (not a tool).
+	 *
+	 * @param \WP_Ability $ability Registered ability.
+	 * @return bool
+	 */
+	private static function is_non_tool_mcp_ability( \WP_Ability $ability ): bool {
+		$meta = $ability->get_meta();
+		$mcp  = is_array( $meta['mcp'] ?? null ) ? $meta['mcp'] : array();
+		$type = $mcp['type'] ?? 'tool';
+
+		return in_array( $type, array( 'resource', 'prompt' ), true );
 	}
 
 	/**

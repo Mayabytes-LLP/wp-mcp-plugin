@@ -317,13 +317,16 @@ class AdminPage {
 							</div>
 							<div class="inside">
 								<p>
-									<?php esc_html_e( 'Use the', 'wp-mcp-plugin' ); ?>
+									<?php esc_html_e( 'Keep MCP-built pages in draft. Use', 'wp-mcp-plugin' ); ?>
+									<code>regenerate-elementor-css</code>
+									<?php esc_html_e( 'after writes, then', 'wp-mcp-plugin' ); ?>
 									<code>visual-compare-preview</code>
-									<?php esc_html_e( 'tool to generate authenticated preview URLs for draft and private Elementor pages. This enables visual comparison with Figma designs via headless browser screenshots.', 'wp-mcp-plugin' ); ?>
+									<?php esc_html_e( 'to generate authenticated preview URLs for draft and private Elementor pages. Published pages are rejected. This enables visual comparison with Figma designs via headless browser screenshots.', 'wp-mcp-plugin' ); ?>
 								</p>
 								<h3><?php esc_html_e( 'Typical workflow', 'wp-mcp-plugin' ); ?></h3>
 								<ol class="wp-mcp-workflow-list">
-									<li><?php esc_html_e( 'Build or update an Elementor page using the plugin\'s write tools.', 'wp-mcp-plugin' ); ?></li>
+									<li><?php esc_html_e( 'Build or update an Elementor page using the plugin\'s write tools (keep status draft).', 'wp-mcp-plugin' ); ?></li>
+									<li><?php esc_html_e( 'Call', 'wp-mcp-plugin' ); ?> <code>regenerate-elementor-css</code> <?php esc_html_e( 'to flush stale CSS and regenerate styles.', 'wp-mcp-plugin' ); ?></li>
 									<li><?php esc_html_e( 'Call', 'wp-mcp-plugin' ); ?> <code>visual-compare-preview</code> <?php esc_html_e( 'to get a time-limited preview URL and Elementor element selectors.', 'wp-mcp-plugin' ); ?></li>
 									<li><?php esc_html_e( 'Open the preview URL in Playwright or Puppeteer and take a screenshot.', 'wp-mcp-plugin' ); ?></li>
 									<li><?php esc_html_e( 'Compare the screenshot against the Figma design using visual diffing or model-based comparison.', 'wp-mcp-plugin' ); ?></li>

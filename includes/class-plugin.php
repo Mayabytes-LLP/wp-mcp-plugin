@@ -28,6 +28,9 @@ class Plugin {
 	/** @var string[] Full list of resource ability slugs registered by this plugin. */
 	private array $resource_names = array();
 
+	/** @var string[] Full list of prompt ability slugs registered by this plugin. */
+	private array $prompt_names = array();
+
 	public static function instance(): self {
 		if ( null === self::$instance ) {
 			self::$instance       = new self();
@@ -69,6 +72,7 @@ class Plugin {
 
 		// Strip wp-mcp- prefix from MCP tool names so they appear clean (e.g. "list-pages" not "wp-mcp-list-pages").
 		add_filter( 'mcp_adapter_tool_name', array( $this, 'strip_tool_name_prefix' ), 10, 2 );
+		add_filter( 'mcp_adapter_prompt_name', array( $this, 'strip_prompt_name_prefix' ), 10, 2 );
 
 		$this->mcp_hardening->register();
 	}
@@ -85,6 +89,7 @@ class Plugin {
 		$registrar->register_all();
 		$this->ability_names  = $registrar->get_ability_names();
 		$this->resource_names = $registrar->get_resource_names();
+		$this->prompt_names   = $registrar->get_prompt_names();
 	}
 
 	public function register_mcp_server( $adapter ): void {
@@ -117,7 +122,7 @@ class Plugin {
 			\WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler::class,
 			$ability_names,
 			$this->resource_names,
-			array(),
+			$this->prompt_names,
 			function ( $request ) {
 				return $this->api_key->verify_transport_permission( $request );
 			}
@@ -137,6 +142,20 @@ class Plugin {
 			return substr( $tool_name, 7 );
 		}
 		return $tool_name;
+	}
+
+	/**
+	 * Strip the wp-mcp- prefix from MCP prompt names.
+	 *
+	 * @param string      $prompt_name Sanitized MCP prompt name.
+	 * @param \WP_Ability $ability     The WordPress ability being converted.
+	 * @return string Clean prompt name.
+	 */
+	public function strip_prompt_name_prefix( string $prompt_name, \WP_Ability $ability ): string {
+		if ( str_starts_with( $prompt_name, 'wp-mcp-' ) ) {
+			return substr( $prompt_name, 7 );
+		}
+		return $prompt_name;
 	}
 
 	/**

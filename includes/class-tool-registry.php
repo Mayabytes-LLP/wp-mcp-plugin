@@ -40,10 +40,12 @@ class ToolRegistry {
 				'wp-mcp/update-elementor-global-settings' => __( 'Update global design settings', 'wp-mcp-plugin' ),
 			),
 			__( 'Render Tools', 'wp-mcp-plugin' ) => array(
+				'wp-mcp/regenerate-elementor-css' => __( 'Regenerate Elementor CSS after writes', 'wp-mcp-plugin' ),
 				'wp-mcp/visual-compare-preview' => __( 'Preview page for visual comparison', 'wp-mcp-plugin' ),
 			),
 			__( 'Diagnostics', 'wp-mcp-plugin' ) => array(
 				'wp-mcp/get-plugin-status' => __( 'Get plugin status and debug info', 'wp-mcp-plugin' ),
+				'wp-mcp/get-server-guide'    => __( 'Get server workflow and documentation index', 'wp-mcp-plugin' ),
 			),
 		);
 	}
