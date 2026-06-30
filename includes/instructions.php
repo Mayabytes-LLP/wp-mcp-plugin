@@ -29,6 +29,24 @@ function wp_mcp_get_instructions(): string {
 }
 
 /**
+ * MCP documentation resource URIs and one-line descriptions.
+ *
+ * @return array<string, string> URI => description.
+ */
+function wp_mcp_get_resource_index(): array {
+	return array(
+		'wp-mcp://docs/workflow'                 => 'Build workflow, draft-only visual comparison loop, regenerate CSS before preview.',
+		'wp-mcp://docs/elementor-data-structure' => '_elementor_data JSON shape, element IDs, responsive suffixes, __globals__.',
+		'wp-mcp://docs/container-system'         => 'Flex vs grid containers, nesting rules, two-container full-bleed pattern.',
+		'wp-mcp://docs/global-settings'          => 'Reading and updating global colors and typography.',
+		'wp-mcp://docs/widget-types'             => 'Common widget reference table and repeater-field caveat.',
+		'wp-mcp://docs/common-patterns'          => 'Hero, feature grid, CTA, and landing page flow patterns.',
+		'wp-mcp://docs/figma-conversion'         => 'Figma to Elementor conversion workflow across four phases.',
+		'wp-mcp://docs/best-practices'           => 'Dos and don\'ts for building Elementor pages.',
+	);
+}
+
+/**
  * Read and return a documentation file from the docs/ subdirectory.
  *
  * @param string $relative_path Relative path under includes/docs/.

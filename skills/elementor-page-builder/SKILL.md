@@ -7,6 +7,8 @@ description: "Build and edit Elementor pages in WordPress via the wp-mcp-plugin 
 
 Model-invoked skill for building WordPress pages with Elementor via the wp-mcp-plugin MCP server. The server's `instructions` field carries the concise workflow; this skill carries the invocation trigger and the ordered build procedure. Deep reference lives in the server's MCP resources — read them on demand, do not hold them in memory.
 
+If your MCP client did not inject server instructions on connect (e.g. Cline), call `get-server-guide` before step 1.
+
 ## When to use
 
 - Creating a new Elementor page (landing page, section, full site)
