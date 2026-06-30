@@ -29,6 +29,44 @@ class AbilitySchemas {
 	}
 
 	/**
+	 * MCP resource annotations for documentation resources.
+	 *
+	 * @param float $priority Priority hint (0–1) for resources/list ordering.
+	 * @return array<string, mixed>
+	 */
+	public static function resource_annotations( float $priority ): array {
+		return array(
+			'audience' => array( 'assistant' ),
+			'priority' => $priority,
+		);
+	}
+
+	/**
+	 * output_schema property for post-write documentation pointers.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function recommended_resources_property(): array {
+		return array(
+			'type'        => 'array',
+			'items'       => array( 'type' => 'string' ),
+			'description' => 'MCP resource URIs to read for next steps or deeper reference.',
+		);
+	}
+
+	/**
+	 * Attach recommended MCP resource URIs to a tool result.
+	 *
+	 * @param array<string, mixed> $result Tool result.
+	 * @param string[]             $uris   Resource URIs.
+	 * @return array<string, mixed>
+	 */
+	public static function with_recommended_resources( array $result, array $uris ): array {
+		$result['_recommended_resources'] = array_values( $uris );
+		return $result;
+	}
+
+	/**
 	 * Elementor element tree node (_elementor_data item).
 	 *
 	 * @return array<string, mixed>

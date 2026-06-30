@@ -19,52 +19,64 @@ class Docs {
 	/** @var string[] Resource ability slugs. */
 	private array $resource_names = array();
 
-	/** @var array<string,string> Map of slug => docs file path (relative to includes/). */
-	private const DOC_FILES = array(
-		'wp-mcp/docs-elementor-data-structure' => 'docs/elementor-data-structure.md',
-		'wp-mcp/docs-container-system'         => 'docs/container-system.md',
-		'wp-mcp/docs-workflow'                 => 'docs/workflow.md',
-		'wp-mcp/docs-global-settings'          => 'docs/global-settings.md',
-		'wp-mcp/docs-widget-types'              => 'docs/widget-types.md',
-		'wp-mcp/docs-common-patterns'           => 'docs/common-patterns.md',
-		'wp-mcp/docs-figma-conversion'          => 'docs/figma-conversion.md',
-		'wp-mcp/docs-best-practices'            => 'docs/best-practices.md',
-	);
-
-	/** @var array<string,string> Map of slug => MCP URI. */
-	private const DOC_URIS = array(
-		'wp-mcp/docs-elementor-data-structure' => 'wp-mcp://docs/elementor-data-structure',
-		'wp-mcp/docs-container-system'         => 'wp-mcp://docs/container-system',
-		'wp-mcp/docs-workflow'                 => 'wp-mcp://docs/workflow',
-		'wp-mcp/docs-global-settings'          => 'wp-mcp://docs/global-settings',
-		'wp-mcp/docs-widget-types'              => 'wp-mcp://docs/widget-types',
-		'wp-mcp/docs-common-patterns'           => 'wp-mcp://docs/common-patterns',
-		'wp-mcp/docs-figma-conversion'          => 'wp-mcp://docs/figma-conversion',
-		'wp-mcp/docs-best-practices'            => 'wp-mcp://docs/best-practices',
-	);
-
-	/** @var array<string,string> Map of slug => human label. */
-	private const DOC_LABELS = array(
-		'wp-mcp/docs-elementor-data-structure' => 'Elementor Data Structure',
-		'wp-mcp/docs-container-system'         => 'Container System',
-		'wp-mcp/docs-workflow'                 => 'Build Workflow',
-		'wp-mcp/docs-global-settings'          => 'Global Settings',
-		'wp-mcp/docs-widget-types'              => 'Widget Types',
-		'wp-mcp/docs-common-patterns'           => 'Common Patterns',
-		'wp-mcp/docs-figma-conversion'          => 'Figma Conversion',
-		'wp-mcp/docs-best-practices'            => 'Best Practices',
-	);
-
-	/** @var array<string,string> Map of slug => one-line description. */
-	private const DOC_DESCRIPTIONS = array(
-		'wp-mcp/docs-elementor-data-structure' => 'The _elementor_data JSON tree shape, element IDs, elType, settings, responsive suffixes, and __globals__ references.',
-		'wp-mcp/docs-container-system'         => 'Flex vs grid containers, settings table, nesting rules (3-level max), and the two-container full-bleed pattern.',
-		'wp-mcp/docs-workflow'                 => 'Standard build workflow, when to use update-page-elementor-data vs incremental add-container/add-widget, and batch-update.',
-		'wp-mcp/docs-global-settings'          => 'Reading and updating global colors and typography; the typography_typography:custom requirement.',
-		'wp-mcp/docs-widget-types'              => 'Common widget reference table and the repeater-field caveat.',
-		'wp-mcp/docs-common-patterns'           => 'Hero, feature grid, CTA, and landing page flow patterns.',
-		'wp-mcp/docs-figma-conversion'          => 'Full Figma to Elementor conversion workflow across 4 phases: discover, map, handle problems, build.',
-		'wp-mcp/docs-best-practices'            => 'Dos and don\'ts for building Elementor pages and converting Figma designs.',
+	/** @var array<string,array{file:string,uri:string,label:string,description:string,priority:float}> */
+	private const DOC_DEFINITIONS = array(
+		'wp-mcp/docs-workflow' => array(
+			'file'        => 'docs/workflow.md',
+			'uri'         => 'wp-mcp://docs/workflow',
+			'label'       => 'Build Workflow',
+			'description' => 'Build workflow, draft-only visual comparison loop, regenerate-elementor-css before visual-compare-preview, and batch-update.',
+			'priority'    => 1.0,
+		),
+		'wp-mcp/docs-container-system' => array(
+			'file'        => 'docs/container-system.md',
+			'uri'         => 'wp-mcp://docs/container-system',
+			'label'       => 'Container System',
+			'description' => 'Flex vs grid containers, settings table, nesting rules (3-level max), and the two-container full-bleed pattern.',
+			'priority'    => 0.9,
+		),
+		'wp-mcp/docs-elementor-data-structure' => array(
+			'file'        => 'docs/elementor-data-structure.md',
+			'uri'         => 'wp-mcp://docs/elementor-data-structure',
+			'label'       => 'Elementor Data Structure',
+			'description' => 'The _elementor_data JSON tree shape, element IDs, elType, settings, responsive suffixes, and __globals__ references.',
+			'priority'    => 0.9,
+		),
+		'wp-mcp/docs-global-settings' => array(
+			'file'        => 'docs/global-settings.md',
+			'uri'         => 'wp-mcp://docs/global-settings',
+			'label'       => 'Global Settings',
+			'description' => 'Reading and updating global colors and typography; the typography_typography:custom requirement.',
+			'priority'    => 0.5,
+		),
+		'wp-mcp/docs-widget-types' => array(
+			'file'        => 'docs/widget-types.md',
+			'uri'         => 'wp-mcp://docs/widget-types',
+			'label'       => 'Widget Types',
+			'description' => 'Common widget reference table and the repeater-field caveat.',
+			'priority'    => 0.5,
+		),
+		'wp-mcp/docs-common-patterns' => array(
+			'file'        => 'docs/common-patterns.md',
+			'uri'         => 'wp-mcp://docs/common-patterns',
+			'label'       => 'Common Patterns',
+			'description' => 'Hero, feature grid, CTA, and landing page flow patterns.',
+			'priority'    => 0.5,
+		),
+		'wp-mcp/docs-figma-conversion' => array(
+			'file'        => 'docs/figma-conversion.md',
+			'uri'         => 'wp-mcp://docs/figma-conversion',
+			'label'       => 'Figma Conversion',
+			'description' => 'Full Figma to Elementor conversion workflow across 4 phases: discover, map, handle problems, build.',
+			'priority'    => 0.5,
+		),
+		'wp-mcp/docs-best-practices' => array(
+			'file'        => 'docs/best-practices.md',
+			'uri'         => 'wp-mcp://docs/best-practices',
+			'label'       => 'Best Practices',
+			'description' => "Dos and don'ts for building Elementor pages and converting Figma designs.",
+			'priority'    => 0.5,
+		),
 	);
 
 	public function register(): void {
@@ -72,165 +84,38 @@ class Docs {
 			return;
 		}
 
-		// Register doc: elementor-data-structure
-		wp_register_ability( 'wp-mcp/docs-elementor-data-structure', array(
-			'label'                => __( 'Elementor Data Structure', 'wp-mcp-plugin' ),
-			'description'          => __( 'The _elementor_data JSON tree shape, element IDs, elType, settings, responsive suffixes, and __globals__ references.', 'wp-mcp-plugin' ),
-			'category'             => 'wp-mcp-plugin',
-			'execute_callback'     => function () {
-				return wp_mcp_read_doc_file( 'docs/elementor-data-structure.md' );
-			},
-			'permission_callback'  => array( ApiKey::class, 'check_ability_permission' ),
-			'meta'                 => array(
-				'mcp' => array(
-					'type'     => 'resource',
-					'public'   => true,
-					'uri'      => 'wp-mcp://docs/elementor-data-structure',
-					'mimeType' => 'text/markdown',
-				),
-			),
-		) );
-		$this->resource_names[] = 'wp-mcp/docs-elementor-data-structure';
+		foreach ( self::DOC_DEFINITIONS as $slug => $definition ) {
+			$this->register_doc( $slug, $definition );
+		}
+	}
 
-		// Register doc: container-system
-		wp_register_ability( 'wp-mcp/docs-container-system', array(
-			'label'                => __( 'Container System', 'wp-mcp-plugin' ),
-			'description'          => __( 'Flex vs grid containers, settings table, nesting rules (3-level max), and the two-container full-bleed pattern.', 'wp-mcp-plugin' ),
-			'category'             => 'wp-mcp-plugin',
-			'execute_callback'     => function () {
-				return wp_mcp_read_doc_file( 'docs/container-system.md' );
-			},
-			'permission_callback'  => array( ApiKey::class, 'check_ability_permission' ),
-			'meta'                 => array(
-				'mcp' => array(
-					'type'     => 'resource',
-					'public'   => true,
-					'uri'      => 'wp-mcp://docs/container-system',
-					'mimeType' => 'text/markdown',
-				),
-			),
-		) );
-		$this->resource_names[] = 'wp-mcp/docs-container-system';
+	/**
+	 * @param string $slug Ability slug.
+	 * @param array{file:string,uri:string,label:string,description:string,priority:float} $definition Doc metadata.
+	 */
+	private function register_doc( string $slug, array $definition ): void {
+		$file_path = $definition['file'];
 
-		// Register doc: workflow
-		wp_register_ability( 'wp-mcp/docs-workflow', array(
-			'label'                => __( 'Build Workflow', 'wp-mcp-plugin' ),
-			'description'          => __( 'Standard build workflow, when to use update-page-elementor-data vs incremental add-container/add-widget, and batch-update.', 'wp-mcp-plugin' ),
-			'category'             => 'wp-mcp-plugin',
-			'execute_callback'     => function () {
-				return wp_mcp_read_doc_file( 'docs/workflow.md' );
+		wp_register_ability( $slug, array(
+			'label'               => __( $definition['label'], 'wp-mcp-plugin' ),
+			'description'         => __( $definition['description'], 'wp-mcp-plugin' ),
+			'category'            => 'wp-mcp-plugin',
+			'execute_callback'    => function () use ( $file_path ) {
+				return wp_mcp_read_doc_file( $file_path );
 			},
-			'permission_callback'  => array( ApiKey::class, 'check_ability_permission' ),
-			'meta'                 => array(
+			'permission_callback' => array( ApiKey::class, 'check_ability_permission' ),
+			'meta'                => array(
 				'mcp' => array(
-					'type'     => 'resource',
-					'public'   => true,
-					'uri'      => 'wp-mcp://docs/workflow',
-					'mimeType' => 'text/markdown',
+					'type'        => 'resource',
+					'public'      => true,
+					'uri'         => $definition['uri'],
+					'mimeType'    => 'text/markdown',
+					'annotations' => AbilitySchemas::resource_annotations( $definition['priority'] ),
 				),
 			),
 		) );
-		$this->resource_names[] = 'wp-mcp/docs-workflow';
 
-		// Register doc: global-settings
-		wp_register_ability( 'wp-mcp/docs-global-settings', array(
-			'label'                => __( 'Global Settings', 'wp-mcp-plugin' ),
-			'description'          => __( 'Reading and updating global colors and typography; the typography_typography:custom requirement.', 'wp-mcp-plugin' ),
-			'category'             => 'wp-mcp-plugin',
-			'execute_callback'     => function () {
-				return wp_mcp_read_doc_file( 'docs/global-settings.md' );
-			},
-			'permission_callback'  => array( ApiKey::class, 'check_ability_permission' ),
-			'meta'                 => array(
-				'mcp' => array(
-					'type'     => 'resource',
-					'public'   => true,
-					'uri'      => 'wp-mcp://docs/global-settings',
-					'mimeType' => 'text/markdown',
-				),
-			),
-		) );
-		$this->resource_names[] = 'wp-mcp/docs-global-settings';
-
-		// Register doc: widget-types
-		wp_register_ability( 'wp-mcp/docs-widget-types', array(
-			'label'                => __( 'Widget Types', 'wp-mcp-plugin' ),
-			'description'          => __( 'Common widget reference table and the repeater-field caveat.', 'wp-mcp-plugin' ),
-			'category'             => 'wp-mcp-plugin',
-			'execute_callback'     => function () {
-				return wp_mcp_read_doc_file( 'docs/widget-types.md' );
-			},
-			'permission_callback'  => array( ApiKey::class, 'check_ability_permission' ),
-			'meta'                 => array(
-				'mcp' => array(
-					'type'     => 'resource',
-					'public'   => true,
-					'uri'      => 'wp-mcp://docs/widget-types',
-					'mimeType' => 'text/markdown',
-				),
-			),
-		) );
-		$this->resource_names[] = 'wp-mcp/docs-widget-types';
-
-		// Register doc: common-patterns
-		wp_register_ability( 'wp-mcp/docs-common-patterns', array(
-			'label'                => __( 'Common Patterns', 'wp-mcp-plugin' ),
-			'description'          => __( 'Hero, feature grid, CTA, and landing page flow patterns.', 'wp-mcp-plugin' ),
-			'category'             => 'wp-mcp-plugin',
-			'execute_callback'     => function () {
-				return wp_mcp_read_doc_file( 'docs/common-patterns.md' );
-			},
-			'permission_callback'  => array( ApiKey::class, 'check_ability_permission' ),
-			'meta'                 => array(
-				'mcp' => array(
-					'type'     => 'resource',
-					'public'   => true,
-					'uri'      => 'wp-mcp://docs/common-patterns',
-					'mimeType' => 'text/markdown',
-				),
-			),
-		) );
-		$this->resource_names[] = 'wp-mcp/docs-common-patterns';
-
-		// Register doc: figma-conversion
-		wp_register_ability( 'wp-mcp/docs-figma-conversion', array(
-			'label'                => __( 'Figma Conversion', 'wp-mcp-plugin' ),
-			'description'          => __( 'Full Figma to Elementor conversion workflow across 4 phases: discover, map, handle problems, build.', 'wp-mcp-plugin' ),
-			'category'             => 'wp-mcp-plugin',
-			'execute_callback'     => function () {
-				return wp_mcp_read_doc_file( 'docs/figma-conversion.md' );
-			},
-			'permission_callback'  => array( ApiKey::class, 'check_ability_permission' ),
-			'meta'                 => array(
-				'mcp' => array(
-					'type'     => 'resource',
-					'public'   => true,
-					'uri'      => 'wp-mcp://docs/figma-conversion',
-					'mimeType' => 'text/markdown',
-				),
-			),
-		) );
-		$this->resource_names[] = 'wp-mcp/docs-figma-conversion';
-
-		// Register doc: best-practices
-		wp_register_ability( 'wp-mcp/docs-best-practices', array(
-			'label'                => __( 'Best Practices', 'wp-mcp-plugin' ),
-			'description'          => __( "Dos and don'ts for building Elementor pages and converting Figma designs.", 'wp-mcp-plugin' ),
-			'category'             => 'wp-mcp-plugin',
-			'execute_callback'     => function () {
-				return wp_mcp_read_doc_file( 'docs/best-practices.md' );
-			},
-			'permission_callback'  => array( ApiKey::class, 'check_ability_permission' ),
-			'meta'                 => array(
-				'mcp' => array(
-					'type'     => 'resource',
-					'public'   => true,
-					'uri'      => 'wp-mcp://docs/best-practices',
-					'mimeType' => 'text/markdown',
-				),
-			),
-		) );
-		$this->resource_names[] = 'wp-mcp/docs-best-practices';
+		$this->resource_names[] = $slug;
 	}
 
 	/**
