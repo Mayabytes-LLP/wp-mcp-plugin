@@ -216,7 +216,7 @@ Follow this sequence when converting a Figma design:
 4. **`get_screenshot`** (Figma) — Get visual reference for each section
 5. **`get_variable_defs`** (Figma) — Extract named design tokens (if available)
 6. **`update-elementor-global-settings`** — Sync Figma design tokens to Elementor (colors, typography)
-7. **`create-page`** — Create the page (use `template: "elementor_canvas"` for landing pages)
+7. **`create-page`** — Create the page as **draft** (`status: "draft"`, the default; use `template: "elementor_canvas"` for landing pages). Never publish for visual comparison workflows.
 8. **For each Figma section:**
    a. Map auto-layout direction → `flex_direction`
    b. Map gap → container `gap`
@@ -228,7 +228,12 @@ Follow this sequence when converting a Figma design:
    h. Map icons → `icon` or `icon-box` widgets
    i. **Ask the user** about any elements that don't map to standard widgets
 9. **`batch-update`** — Apply responsive overrides and styling tweaks
-10. **`get-page`** — Verify the final result
+10. **`regenerate-elementor-css`** — Regenerate Elementor CSS after all writes (required before preview)
+11. **`visual-compare-preview`** — Get authenticated draft `preview_url` for headless-browser screenshots
+12. Compare preview screenshots against Figma `get_screenshot` output; fix with `update-element` / `batch-update`, then repeat steps 10–12
+13. **`get-page`** — Verify the JSON structure when needed (not a substitute for visual preview)
+
+Read resource `wp-mcp://docs/workflow` for the full draft-only preview loop.
 
 ### Handling Multi-Page Figma Files
 

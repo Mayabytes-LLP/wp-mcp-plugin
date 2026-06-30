@@ -149,7 +149,7 @@ class Element {
 
 		wp_register_ability( 'wp-mcp/add-container', array(
 			'label'             => __( 'Add Container', 'wp-mcp-plugin' ),
-			'description'       => __( 'Add a new flex or grid container to an Elementor page. Containers are the building blocks of Elementor layouts — they hold widgets and can nest other containers. Specify a parent_id (or omit for top-level), position, and container settings. See resource \`wp-mcp://docs/container-system\` for flex/grid rules, the 3-level nesting limit, and the two-container full-bleed pattern.', 'wp-mcp-plugin' ),
+			'description'       => __( 'Add a new flex or grid container to an Elementor page. Requires post_id; optional parent_id (7-char hex from a prior add-container). Returns element_id for add-widget and update-element. See `wp-mcp://docs/container-system` for flex/grid rules, the 3-level nesting limit, and the two-container full-bleed pattern.', 'wp-mcp-plugin' ),
 			'category'          => 'wp-mcp-plugin',
 			'execute_callback'  => array( $this, 'execute_add_container' ),
 			'permission_callback' => array( $this, 'check_edit_permission' ),
@@ -181,6 +181,7 @@ class Element {
 				'properties' => array(
 					'element_id' => array( 'type' => 'string' ),
 					'post_id'    => array( 'type' => 'integer' ),
+					'_recommended_resources' => AbilitySchemas::recommended_resources_property(),
 				),
 				'required'   => array( 'element_id', 'post_id' ),
 			),
@@ -248,9 +249,12 @@ class Element {
 
 		$this->save_page_data( $post_id, $page_data );
 
-		return array(
-			'element_id' => $container['id'],
-			'post_id'    => $post_id,
+		return AbilitySchemas::with_recommended_resources(
+			array(
+				'element_id' => $container['id'],
+				'post_id'    => $post_id,
+			),
+			array( 'wp-mcp://docs/container-system', 'wp-mcp://docs/widget-types' )
 		);
 	}
 
@@ -261,7 +265,7 @@ class Element {
 
 		wp_register_ability( 'wp-mcp/add-widget', array(
 			'label'             => __( 'Add Widget', 'wp-mcp-plugin' ),
-			'description'       => __( 'Add a widget (any Elementor type) into a container. Use list-elementor-widgets to see available types and get-elementor-widget-schema to know which settings each widget accepts. Requires a parent container ID. Use \`list-elementor-widgets\` and \`get-elementor-widget-schema\` to discover types and settings; see \`wp-mcp://docs/widget-types\`.', 'wp-mcp-plugin' ),
+			'description'       => __( 'Add a widget into a container. Requires parent_id (7-char hex container), widget_type, and post_id. Use list-elementor-widgets and get-elementor-widget-schema before calling. Returns element_id for update-element. See `wp-mcp://docs/widget-types`.', 'wp-mcp-plugin' ),
 			'category'          => 'wp-mcp-plugin',
 			'execute_callback'  => array( $this, 'execute_add_widget' ),
 			'permission_callback' => array( $this, 'check_edit_permission' ),
@@ -298,6 +302,7 @@ class Element {
 					'element_id'  => array( 'type' => 'string' ),
 					'post_id'     => array( 'type' => 'integer' ),
 					'widget_type' => array( 'type' => 'string' ),
+					'_recommended_resources' => AbilitySchemas::recommended_resources_property(),
 				),
 				'required'   => array( 'element_id', 'post_id', 'widget_type' ),
 			),
@@ -373,10 +378,13 @@ class Element {
 
 		$this->save_page_data( $post_id, $page_data );
 
-		return array(
-			'element_id'  => $widget_element['id'],
-			'post_id'     => $post_id,
-			'widget_type' => $widget_type,
+		return AbilitySchemas::with_recommended_resources(
+			array(
+				'element_id'  => $widget_element['id'],
+				'post_id'     => $post_id,
+				'widget_type' => $widget_type,
+			),
+			array( 'wp-mcp://docs/widget-types', 'wp-mcp://docs/workflow' )
 		);
 	}
 
@@ -387,7 +395,7 @@ class Element {
 
 		wp_register_ability( 'wp-mcp/update-element', array(
 			'label'             => __( 'Update Element', 'wp-mcp-plugin' ),
-			'description'       => __( 'Update settings on any element (container or widget) by its element ID. Settings are merged with existing ones — you only need to provide the properties you want to change. Settings merge with existing — provide only the properties you want to change. See \`wp-mcp://docs/elementor-data-structure\` for the settings shape.', 'wp-mcp-plugin' ),
+			'description'       => __( 'Update settings on any element (container or widget) by element_id. Settings merge with existing — provide only changed properties. See `wp-mcp://docs/elementor-data-structure` for the settings shape.', 'wp-mcp-plugin' ),
 			'category'          => 'wp-mcp-plugin',
 			'execute_callback'  => array( $this, 'execute_update_element' ),
 			'permission_callback' => array( $this, 'check_edit_permission' ),
@@ -566,6 +574,7 @@ class Element {
 						'type'  => 'array',
 						'items' => AbilitySchemas::batch_failure_item(),
 					),
+					'_recommended_resources' => AbilitySchemas::recommended_resources_property(),
 				),
 				'required'   => array( 'success', 'post_id', 'updated', 'failed' ),
 			),
@@ -619,11 +628,14 @@ class Element {
 			$this->save_page_data( $post_id, $page_data );
 		}
 
-		return array(
-			'success' => $updated > 0,
-			'post_id' => $post_id,
-			'updated' => $updated,
-			'failed'  => $failed,
+		return AbilitySchemas::with_recommended_resources(
+			array(
+				'success' => $updated > 0,
+				'post_id' => $post_id,
+				'updated' => $updated,
+				'failed'  => $failed,
+			),
+			array( 'wp-mcp://docs/workflow' )
 		);
 	}
 

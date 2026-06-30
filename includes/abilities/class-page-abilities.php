@@ -55,7 +55,7 @@ class Page {
 
 		wp_register_ability( 'wp-mcp/create-page', array(
 			'label'             => __( 'Create Page', 'wp-mcp-plugin' ),
-			'description'       => __( 'Create a new WordPress page with Elementor builder enabled. Optionally set an initial title, slug, status, and template. Returns the new page ID and URL. See resource \`wp-mcp://docs/workflow\` for the standard build sequence.', 'wp-mcp-plugin' ),
+			'description'       => __( 'Create a new WordPress page with Elementor builder enabled. Defaults to draft status — keep pages draft for MCP visual comparison; never publish for Figma → Elementor preview workflows. Optionally set title, slug, status, and template. Returns the new page ID and URL. Read resource `wp-mcp://docs/workflow` for the full build and preview sequence.', 'wp-mcp-plugin' ),
 			'category'          => 'wp-mcp-plugin',
 			'execute_callback'  => array( $this, 'execute_create_page' ),
 			'permission_callback' => array( $this, 'check_create_permission' ),
@@ -92,6 +92,7 @@ class Page {
 					'post_id'  => array( 'type' => 'integer' ),
 					'url'      => array( 'type' => 'string' ),
 					'edit_url' => array( 'type' => 'string' ),
+					'_recommended_resources' => AbilitySchemas::recommended_resources_property(),
 				),
 				'required'   => array( 'post_id', 'url', 'edit_url' ),
 			),
@@ -137,12 +138,15 @@ class Page {
 		// Ensure all Elementor meta keys are present for rendering.
 		Element::ensure_elementor_meta( $post_id );
 
-		return array(
-			'post_id'  => $post_id,
-			'url'      => get_permalink( $post_id ),
-			'edit_url' => \Elementor\Plugin::$instance->documents->get( $post_id )
-				? \Elementor\Plugin::$instance->documents->get( $post_id )->get_edit_url()
-				: '',
+		return AbilitySchemas::with_recommended_resources(
+			array(
+				'post_id'  => $post_id,
+				'url'      => get_permalink( $post_id ),
+				'edit_url' => \Elementor\Plugin::$instance->documents->get( $post_id )
+					? \Elementor\Plugin::$instance->documents->get( $post_id )->get_edit_url()
+					: '',
+			),
+			array( 'wp-mcp://docs/workflow', 'wp-mcp://docs/container-system' )
 		);
 	}
 

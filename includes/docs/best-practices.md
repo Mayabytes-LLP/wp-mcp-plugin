@@ -19,7 +19,7 @@
 - **DO keep nesting to 3 levels maximum.** Outer container → inner container → widget.
 - **DO call `get-elementor-widget-schema` before setting properties.** Widget settings vary by type — never guess property names.
 - **DO use the correct HTML tag for headings.** One H1 per page, then H2, H3 in hierarchy. Never skip levels.
-- **DO use `batch-update` for multiple changes.** One save operation is faster than many individual ones.
+- **DO keep MCP-built pages in draft** until the user explicitly asks to publish. Use `regenerate-elementor-css` then `visual-compare-preview` for visual evaluation — never publish just to preview.
 - **DO set `typography_typography: "custom"`** when applying custom font settings — without it, Elementor may ignore your typography changes.
 - **DO remove default container padding** (10px on all sides) when not needed — it compounds when nesting.
 
@@ -44,4 +44,5 @@
 - **DON'T use hardcoded hex colors when a global color exists.** Use `__globals__` references instead.
 - **DON'T create pages with 50+ widgets.** Each widget adds DOM nodes, CSS, and potentially JS. Keep pages under 30 widgets for optimal performance.
 - **DON'T add parallax, scroll effects, or motion to every section.** These are expensive on mobile and hurt Core Web Vitals. Limit to 3–5 strategic animations per page.
-- **DON'T skip responsive design when Figma only has desktop frames.** Always implement mobile breakpoints.
+- **DON'T publish pages for MCP visual comparison.** Use draft status and `visual-compare-preview` URLs only.
+- **DON'T call `visual-compare-preview` without `regenerate-elementor-css` after writes.** Stale Elementor CSS makes previews look wrong.
