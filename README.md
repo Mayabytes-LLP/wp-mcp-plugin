@@ -97,6 +97,7 @@ For Claude Desktop / other MCP clients, follow the client's remote-server config
 - `list-elementor-templates` — list saved Elementor templates.
 - `get-elementor-global-settings` — active kit colors and typography.
 - `get-plugin-status` — adapter version, Elementor status, API-key state.
+- `get-server-guide` — server workflow and documentation index (bootstrap for clients that ignore initialize instructions).
 
 ### Write / mutate
 
@@ -112,7 +113,8 @@ For Claude Desktop / other MCP clients, follow the client's remote-server config
 
 ### Render
 
-- `visual-compare-preview` — generate an authenticated, time-limited preview URL for headless-browser screenshotting.
+- `regenerate-elementor-css` — flush stale cache and regenerate Elementor CSS after writes (call before preview).
+- `visual-compare-preview` — generate an authenticated draft preview URL for headless-browser screenshotting (rejects published pages).
 
 All mutating tools require WordPress capabilities on the service user (typically `edit_pages` for page tools, `manage_options` for global settings). The API key gates the transport; on success the plugin authenticates as a service WordPress user (first administrator by default, overridable via the `wp_mcp_authenticated_user_id` filter) so the mcp-adapter can manage sessions and enforce ability-level capability checks.
 
@@ -121,12 +123,15 @@ All mutating tools require WordPress capabilities on the service user (typically
 This plugin is designed to pair with a Figma MCP server. The typical loop:
 
 1. MCP client reads a Figma design via the Figma MCP.
-2. MCP client calls `create-page` and `add-container` / `add-widget` to build the Elementor page.
-3. `visual-compare-preview` produces a preview URL.
-4. A headless browser (Playwright/Puppeteer) screenshots the preview.
-5. The screenshot is compared against the Figma design; differences are fixed with further `update-element` / `batch-update` calls.
+2. MCP client calls `create-page` (draft) and `add-container` / `add-widget` to build the Elementor page.
+3. `regenerate-elementor-css` flushes stale CSS after writes.
+4. `visual-compare-preview` produces a draft preview URL.
+5. A headless browser (Playwright/Puppeteer) screenshots the preview.
+6. The screenshot is compared against the Figma design; differences are fixed with further `update-element` / `batch-update` calls, then repeat from step 3.
 
-The plugin ships in-app documentation (container nesting limits, the full-bleed pattern, widget schemas) as MCP resources at `wp-mcp://docs/*`. The server's `instructions` field on initialize carries the concise workflow; read resources on demand via `resources/read`.
+The plugin ships in-app documentation (container nesting limits, the full-bleed pattern, widget schemas) as MCP resources at `wp-mcp://docs/*`. The server's `instructions` field on initialize carries the concise workflow; read resources on demand via `resources/read`. Write tools may return `_recommended_resources` URIs pointing at relevant docs.
+
+**Client compatibility:** Cursor, Claude Code, and OpenCode inject initialize `instructions` automatically. Clients that do not (e.g. Cline) should call `get-server-guide` on first connect. Optional user-triggered MCP prompts: `build-landing-page`, `figma-to-elementor`.
 
 ## Development
 
