@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+#MISE description="Run wp-cli against app/public (WordPress root)"
+#MISE alias="w"
+set -euo pipefail
+
+WP_CLI_PHAR="$(mise where ubi:wp-cli/wp-cli)/wp-cli.phar"
+WP_PATH="${MISE_PROJECT_ROOT:-$PWD}/app/public"
+
+# Discover Local by Flywheel's MySQL socket so mise's PHP (which lacks
+# mysqli.default_socket) can connect to DB_HOST=localhost in wp-config.php.
+# Falls back to plain php when not running inside a Local site, so this
+# stays safe outside Local.
+wp_mcp_local_socket="" 
+SITES_JSON="$HOME/.config/Local/sites.json"
+if [[ -f "$SITES_JSON" ]]; then
+	# Site root is two levels above app/public (the WP root).
+	SITE_ROOT="$(cd "$WP_PATH/../.." && pwd -P)"
+	# Parse sites.json with php (always available under mise) and match by
+	# realpath of the site's `path` field against our site root.
+	wp_mcp_local_socket="$(php -r '
+		$json = @file_get_contents($_SERVER["argv"][1]);
+		if ($json === false) { return; }
+		$data = json_decode($json, true);
+		if (!is_array($data)) { return; }
+		$site_root = $_SERVER["argv"][2];
+		// Local keys sites by ID at the top level (no "sites" wrapper).
+		foreach ($data as $id => $site) {
+			if (!is_array($site) || empty($site["path"]) || empty($id)) { continue; }
+			$path = realpath(str_replace("~", getenv("HOME"), $site["path"]));
+			if ($path === $site_root) {
+				$sock = getenv("HOME") . "/.config/Local/run/" . $id . "/mysql/mysqld.sock";
+				if (file_exists($sock)) {
+					echo $sock;
+					return;
+				}
+			}
+		}
+	' "$SITES_JSON" "$SITE_ROOT" 2>/dev/null || true)"
+fi
+
+if [[ -n "$wp_mcp_local_socket" ]]; then
+	exec php -d "mysqli.default_socket=$wp_mcp_local_socket" "$WP_CLI_PHAR" --path="$WP_PATH" "$@"
+else
+	exec php "$WP_CLI_PHAR" --path="$WP_PATH" "$@"
+fi

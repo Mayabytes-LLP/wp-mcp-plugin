@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+#MISE description="Run composer from inside the plugin dir (app/public/wp-content/plugins/wp-mcp-plugin)"
+set -euo pipefail
+
+# PLUGIN_DIR="${MISE_PROJECT_ROOT:-$PWD}/app/public/wp-content/plugins/wp-mcp-plugin"
+
+# if [ ! -d "$PLUGIN_DIR" ]; then
+# 	echo "plugin dir not found: $PLUGIN_DIR" >&2
+# 	echo "create it first (mkdir -p $PLUGIN_DIR), then re-run." >&2
+# 	exit 1
+# fi
+
+COMPOSER_PHAR="${MISE_PROJECT_ROOT:-$PWD}/.mise/bin/composer.phar"
+if [ ! -f "$COMPOSER_PHAR" ]; then
+	mkdir -p "$(dirname "$COMPOSER_PHAR")"
+	echo "fetching composer.phar -> $COMPOSER_PHAR" >&2
+	curl -fsSL "https://getcomposer.org/composer-stable.phar" -o "$COMPOSER_PHAR"
+	chmod +x "$COMPOSER_PHAR"
+fi
+
+cd "$PLUGIN_DIR"
+exec php "$COMPOSER_PHAR" "$@"
