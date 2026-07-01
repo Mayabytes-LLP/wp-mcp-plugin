@@ -360,7 +360,11 @@ class Query {
 			return array( 'templates' => array() );
 		}
 
-		$templates_raw = $source->get_items();
+		try {
+			$templates_raw = $source->get_items();
+		} catch ( \Exception $e ) {
+			$templates_raw = array();
+		}
 		$filter_type   = sanitize_text_field( $input['type'] ?? '' );
 
 		foreach ( $templates_raw as $template ) {
@@ -369,8 +373,8 @@ class Query {
 			}
 
 			$templates[] = array(
-				'id'     => $template['template_id'],
-				'title'  => $template['title'],
+				'id'     => $template['template_id'] ?? 0,
+				'title'  => sanitize_text_field( $template['title'] ?? '' ),
 				'type'   => $template['type'] ?? '',
 				'status' => $template['status'] ?? 'publish',
 			);
@@ -432,8 +436,8 @@ class Query {
 		return array(
 			'colors'          => $settings['custom_colors'],
 			'typography'      => $settings['custom_typography'],
-			'container_width' => $settings['container_width'] ?? array(),
-			'breakpoints'     => $settings['breakpoints'] ?? array(),
+			'container_width' => $settings['container_width'] ?? (object) array(),
+			'breakpoints'     => $settings['breakpoints'] ?? (object) array(),
 		);
 	}
 }

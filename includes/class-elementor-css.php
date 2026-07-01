@@ -50,6 +50,16 @@ class ElementorCss {
 			);
 		}
 
+		// Rate-limit: prevent concurrent/rapid-fire CSS regeneration.
+		$lock_key = 'wp_mcp_css_regenerating_' . $post_id;
+		if ( get_transient( $lock_key ) ) {
+			return new \WP_Error(
+				'css_already_regenerating',
+				__( 'CSS regeneration already in progress for this page. Retry shortly.', 'wp-mcp-plugin' )
+			);
+		}
+		set_transient( $lock_key, 1, 10 );
+
 		Abilities\Element::ensure_elementor_meta( $post_id );
 
 		$document = \Elementor\Plugin::$instance->documents->get_doc_for_frontend( $post_id );
@@ -64,7 +74,13 @@ class ElementorCss {
 		delete_post_meta( $post_id, '_elementor_css' );
 
 		$css_file = \Elementor\Core\Files\CSS\Post::create( $post_id );
-		$css_file->update();
+
+		try {
+			$css_file->update();
+		} catch ( \Exception $e ) {
+			delete_transient( $lock_key );
+			return new \WP_Error( 'css_generation_failed', $e->getMessage() );
+		}
 
 		$css_meta   = get_post_meta( $post_id, '_elementor_css', true );
 		$css_status = is_array( $css_meta ) ? (string) ( $css_meta['status'] ?? '' ) : '';

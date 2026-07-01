@@ -126,7 +126,7 @@ class Element {
 
 		// Set version to current Elementor version so CSS generation works.
 		if ( ! get_post_meta( $post_id, '_elementor_version', true ) ) {
-			update_post_meta( $post_id, '_elementor_version', ELEMENTOR_VERSION );
+			update_post_meta( $post_id, '_elementor_version', defined( 'ELEMENTOR_VERSION' ) ? ELEMENTOR_VERSION : '3.0.0' );
 		}
 
 		// Ensure page settings exist (template, etc.) so the document renders.
@@ -337,6 +337,11 @@ class Element {
 					)
 				);
 			}
+		} else {
+			return new \WP_Error(
+				'elementor_not_ready',
+				__( 'Elementor widgets manager is not available. Cannot validate widget type.', 'wp-mcp-plugin' )
+			);
 		}
 
 		$widget_element = array(
@@ -551,6 +556,7 @@ class Element {
 						'type'        => 'array',
 						'description' => 'Array of operations. Each operation: { element_id (string), settings (object) }.',
 						'minItems'    => 1,
+						'maxItems'    => 100,
 						'items'       => array(
 							'type'       => 'object',
 							'properties' => array(
@@ -591,6 +597,13 @@ class Element {
 
 		if ( ! is_array( $operations ) || empty( $operations ) ) {
 			return new \WP_Error( 'invalid_operations', __( 'Operations must be a non-empty array.', 'wp-mcp-plugin' ) );
+		}
+
+		if ( count( $operations ) > 100 ) {
+			return new \WP_Error(
+				'too_many_operations',
+				__( 'Batch update limited to 100 operations per call.', 'wp-mcp-plugin' )
+			);
 		}
 
 		$page_data = $this->get_page_data( $post_id );
@@ -649,14 +662,12 @@ class Element {
 	 */
 	private function sanitize_settings( array $settings ): array {
 		$sanitized = array();
-
 		foreach ( $settings as $key => $value ) {
 			if ( is_string( $value ) ) {
-				// URLs get esc_url_raw
-				if ( preg_match( '/^(url|link|href|src)$/i', $key ) ) {
+				if ( preg_match( '/^(url|link|href|src)$/i', $key ) || str_ends_with( $key, '_url' ) || str_ends_with( $key, '_link' ) ) {
 					$sanitized[ $key ] = esc_url_raw( $value );
 				} else {
-					$sanitized[ $key ] = sanitize_text_field( $value );
+					$sanitized[ $key ] = wp_kses_post( $value );
 				}
 			} elseif ( is_array( $value ) ) {
 				$sanitized[ $key ] = $this->sanitize_settings( $value );
@@ -668,7 +679,6 @@ class Element {
 				$sanitized[ $key ] = sanitize_textarea_field( (string) $value );
 			}
 		}
-
 		return $sanitized;
 	}
 }

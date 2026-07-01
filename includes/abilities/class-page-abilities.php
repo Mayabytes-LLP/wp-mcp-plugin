@@ -132,7 +132,11 @@ class Page {
 
 		// Optionally set initial content
 		if ( ! empty( $input['initial_elementor_data'] ) && is_array( $input['initial_elementor_data'] ) ) {
-			update_post_meta( $post_id, '_elementor_data', wp_slash( wp_json_encode( $input['initial_elementor_data'] ) ) );
+			$json = wp_json_encode( $input['initial_elementor_data'] );
+			if ( false === $json ) {
+				return new \WP_Error( 'encode_failed', __( 'Failed to encode Elementor data as JSON.', 'wp-mcp-plugin' ) );
+			}
+			update_post_meta( $post_id, '_elementor_data', wp_slash( $json ) );
 		}
 
 		// Ensure all Elementor meta keys are present for rendering.
@@ -201,7 +205,11 @@ class Page {
 			return new \WP_Error( 'invalid_data', __( 'elementor_data must be a JSON array.', 'wp-mcp-plugin' ) );
 		}
 
-		update_post_meta( $post_id, '_elementor_data', wp_slash( wp_json_encode( $input['elementor_data'] ) ) );
+		$json = wp_json_encode( $input['elementor_data'] );
+		if ( false === $json ) {
+			return new \WP_Error( 'encode_failed', __( 'Failed to encode Elementor data as JSON.', 'wp-mcp-plugin' ) );
+		}
+		update_post_meta( $post_id, '_elementor_data', wp_slash( $json ) );
 
 		// Invalidate Elementor CSS cache
 		delete_post_meta( $post_id, '_elementor_css' );
@@ -257,6 +265,11 @@ class Page {
 	public function execute_delete_page( array $input ): array|\WP_Error {
 		$post_id = (int) $input['post_id'];
 		$force   = ! empty( $input['force'] );
+
+		$post = get_post( $post_id );
+		if ( ! $post || 'page' !== $post->post_type ) {
+			return new \WP_Error( 'page_not_found', __( 'Page not found.', 'wp-mcp-plugin' ) );
+		}
 
 		$result = wp_delete_post( $post_id, $force );
 

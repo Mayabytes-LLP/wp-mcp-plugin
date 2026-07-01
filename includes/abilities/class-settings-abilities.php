@@ -90,11 +90,22 @@ class Settings {
 
 		if ( isset( $input['colors'] ) && is_array( $input['colors'] ) ) {
 			$colors = array();
-			foreach ( $input['colors'] as $color ) {
+			foreach ( $input['colors'] as $i => $color ) {
+			$color_val = sanitize_hex_color( $color['color'] ?? '' );
+			if ( null === $color_val ) {
+					return new \WP_Error(
+						'invalid_color',
+						sprintf(
+							/* translators: %s: color title or index */
+							__( 'Invalid hex color for item "%s".', 'wp-mcp-plugin' ),
+							$color['title'] ?? (string) $i
+						)
+					);
+				}
 				$colors[] = array(
 					'_id'    => sanitize_text_field( $color['_id'] ?? wp_generate_uuid4() ),
 					'title'  => sanitize_text_field( $color['title'] ?? '' ),
-					'color'  => sanitize_hex_color( $color['color'] ?? '#000000' ),
+					'color'  => $color_val,
 				);
 			}
 
@@ -162,8 +173,12 @@ class Settings {
 			);
 		}
 
-		$kit->update_settings( $updates );
-		$kit->save( array( 'settings' => $kit->get_settings() ) );
+		try {
+			$kit->update_settings( $updates );
+			$kit->save( array( 'settings' => $kit->get_settings() ) );
+		} catch ( \Exception $e ) {
+			return new \WP_Error( 'kit_save_failed', $e->getMessage() );
+		}
 
 		return array( 'success' => true );
 	}

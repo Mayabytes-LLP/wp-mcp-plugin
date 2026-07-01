@@ -74,6 +74,11 @@ class PreviewToken {
 			return;
 		}
 
+		// Bail in non-front-end request contexts.
+		if ( is_admin() || wp_doing_ajax() || wp_doing_cron() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+			return;
+		}
+
 		if ( ! $query->is_main_query() || ! $query->is_singular() ) {
 			return;
 		}
@@ -115,24 +120,26 @@ class PreviewToken {
 		// Do NOT call wp_set_current_user() — that grants full admin
 		// for the entire request. Instead, use user_has_cap filter
 		// to grant only the capabilities needed to read this page.
+		// The filter is removed on shutdown so the cap grants persist
+		// through query execution and template rendering, but don't
+		// outlive the request.
 
-		add_filter(
-			'user_has_cap',
-			function ( $allcaps ) use ( $post ) {
-				$allcaps['read_post']          = true;
-				$allcaps['read_private_pages'] = true;
+		$cap_filter = function ( $allcaps ) use ( $post ) {
+			$allcaps['read_post']          = true;
+			$allcaps['read_private_pages'] = true;
 
-				// Draft and pending posts need edit capabilities
-				// for WP_Query to include them in results.
-				if ( 'draft' === $post->post_status || 'pending' === $post->post_status ) {
-					$allcaps['edit_posts']        = true;
-					$allcaps['edit_pages']        = true;
-					$allcaps['edit_others_pages'] = true;
-				}
-
-				return $allcaps;
+			// Draft and pending posts need edit capabilities
+			// for WP_Query to include them in results.
+			if ( 'draft' === $post->post_status || 'pending' === $post->post_status ) {
+				$allcaps['edit_posts']        = true;
+				$allcaps['edit_pages']        = true;
+				$allcaps['edit_others_pages'] = true;
 			}
-		);
+
+			return $allcaps;
+		};
+
+		add_filter( 'user_has_cap', $cap_filter );
 
 		// Suppress admin bar (it would render if user somehow had caps).
 		add_filter( 'show_admin_bar', '__return_false' );
@@ -150,6 +157,16 @@ class PreviewToken {
 		$query->set( 'pagename', '' );
 		$query->set( 'post_status', array( 'publish', 'draft', 'private', 'pending' ) );
 		$query->set( 'suppress_filters', false );
+
+		// Remove the cap filter on shutdown so the grants persist
+		// through query execution and template rendering, but
+		// don't outlive the request.
+		add_action(
+			'shutdown',
+			function () use ( $cap_filter ) {
+				remove_filter( 'user_has_cap', $cap_filter );
+			}
+		);
 
 		// ── Prevent caching of the privileged render ─────────────
 		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
