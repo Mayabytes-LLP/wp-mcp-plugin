@@ -122,12 +122,12 @@ class SchemaGenerator {
 		return array(
 			'custom_colors'    => $kit_settings['system_colors'] ?? $kit_settings['custom_colors'] ?? array(),
 			'custom_typography' => $kit_settings['system_typography'] ?? $kit_settings['custom_typography'] ?? array(),
-			'container_width'   => $kit_settings['container_width'] ?? array(),
-			'breakpoints'       => $kit_settings['viewport_md'] ?? null ? array(
+			'container_width'   => (object) ( $kit_settings['container_width'] ?? array() ),
+			'breakpoints'       => $kit_settings['viewport_md'] ?? null ? (object) array(
 				'mobile'  => $kit_settings['viewport_mobile'] ?? 767,
 				'tablet'  => $kit_settings['viewport_md'] ?? 1024,
 				'desktop' => null,
-			) : array(),
+			) : (object) array(),
 		);
 	}
 
