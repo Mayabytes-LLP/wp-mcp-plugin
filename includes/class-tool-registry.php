@@ -51,22 +51,13 @@ class ToolRegistry {
 	}
 
 	/**
-	 * Flat slug => label map.
-	 *
-	 * @return array<string, string>
+	 * @return string[]
 	 */
-	public static function get_all_flat(): array {
+	public static function get_all_slugs(): array {
 		$tools = array();
 		foreach ( self::get_groups() as $group ) {
 			$tools = array_merge( $tools, $group );
 		}
-		return $tools;
-	}
-
-	/**
-	 * @return string[]
-	 */
-	public static function get_all_slugs(): array {
-		return array_keys( self::get_all_flat() );
+		return array_keys( $tools );
 	}
 }

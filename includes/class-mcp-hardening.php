@@ -25,8 +25,7 @@ class McpHardening {
 
 	public function register(): void {
 		add_filter( 'mcp_adapter_validation_enabled', array( $this, 'enable_schema_validation' ), 10, 3 );
-		add_filter( 'rest_post_dispatch', array( $this, 'add_security_headers' ), 10, 3 );
-		add_filter( 'rest_post_dispatch', array( $this, 'add_auth_challenge_header' ), 10, 3 );
+		add_filter( 'rest_post_dispatch', array( $this, 'filter_response' ), 10, 3 );
 	}
 
 	/**
@@ -50,19 +49,18 @@ class McpHardening {
 	}
 
 	/**
-	 * Add security headers to MCP REST responses.
+	 * Add security headers and MCP auth hints to MCP REST responses.
 	 *
-	 * @param \WP_REST_Response        $response Response object.
-	 * @param \WP_REST_Server          $server   REST server.
-	 * @param \WP_REST_Request         $request  Request object.
+	 * Auth hint uses a custom header instead of WWW-Authenticate: Bearer so
+	 * OAuth-aware MCP clients (Cursor) do not probe /.well-known/oauth-* on WordPress.
+	 *
+	 * @param \WP_REST_Response $response Response object.
+	 * @param \WP_REST_Server   $server   REST server.
+	 * @param \WP_REST_Request  $request  Request object.
 	 * @return \WP_REST_Response
 	 */
-	public function add_security_headers( $response, $server, $request ) {
-		if ( ! $this->is_mcp_request( $request ) ) {
-			return $response;
-		}
-
-		if ( ! $response instanceof \WP_REST_Response ) {
+	public function filter_response( $response, $server, $request ) {
+		if ( ! $this->is_mcp_request( $request ) || ! $response instanceof \WP_REST_Response ) {
 			return $response;
 		}
 
@@ -71,29 +69,6 @@ class McpHardening {
 		$response->header( 'Referrer-Policy', 'no-referrer' );
 		$response->header( 'Cache-Control', 'no-store, no-cache, must-revalidate, private' );
 
-		return $response;
-	}
-
-	/**
-	 * Add MCP auth hints on failed transport responses.
-	 *
-	 * Uses a custom header instead of WWW-Authenticate: Bearer so OAuth-aware
-	 * MCP clients (Cursor) do not probe /.well-known/oauth-* on WordPress.
-	 *
-	 * @param \WP_REST_Response $response Response object.
-	 * @param \WP_REST_Server   $server   REST server.
-	 * @param \WP_REST_Request  $request  Request object.
-	 * @return \WP_REST_Response
-	 */
-	public function add_auth_challenge_header( $response, $server, $request ) {
-		if ( ! $this->is_mcp_request( $request ) ) {
-			return $response;
-		}
-
-		if ( ! $response instanceof \WP_REST_Response ) {
-			return $response;
-		}
-
 		$status = $response->get_status();
 
 		if ( 429 === $status ) {
@@ -101,15 +76,9 @@ class McpHardening {
 			if ( $retry_after > 0 ) {
 				$response->header( 'Retry-After', (string) $retry_after );
 			}
-
-			return $response;
+		} elseif ( 401 === $status ) {
+			$response->header( 'X-WP-MCP-Auth-Required', 'X-WP-MCP-Key' );
 		}
-
-		if ( 401 !== $status ) {
-			return $response;
-		}
-
-		$response->header( 'X-WP-MCP-Auth-Required', 'X-WP-MCP-Key' );
 
 		return $response;
 	}

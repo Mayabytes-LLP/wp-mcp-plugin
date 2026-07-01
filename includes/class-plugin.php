@@ -71,8 +71,8 @@ class Plugin {
 		add_filter( 'wp_mcp_ability_names', array( $this, 'filter_disabled_tools' ), 10, 1 );
 
 		// Strip wp-mcp- prefix from MCP tool names so they appear clean (e.g. "list-pages" not "wp-mcp-list-pages").
-		add_filter( 'mcp_adapter_tool_name', array( $this, 'strip_tool_name_prefix' ), 10, 2 );
-		add_filter( 'mcp_adapter_prompt_name', array( $this, 'strip_prompt_name_prefix' ), 10, 2 );
+		add_filter( 'mcp_adapter_tool_name', array( $this, 'strip_name_prefix' ), 10, 2 );
+		add_filter( 'mcp_adapter_prompt_name', array( $this, 'strip_name_prefix' ), 10, 2 );
 
 		$this->mcp_hardening->register();
 	}
@@ -130,32 +130,18 @@ class Plugin {
 	}
 
 	/**
-	 * Strip the wp-mcp- prefix from MCP tool names so tools appear as
+	 * Strip the wp-mcp- prefix from MCP tool/prompt names so they appear as
 	 * "list-pages" instead of "wp-mcp-list-pages".
 	 *
-	 * @param string     $tool_name Sanitized MCP tool name (e.g. "wp-mcp-list-pages").
-	 * @param \WP_Ability $ability  The WordPress ability being converted.
-	 * @return string Clean tool name.
+	 * @param string      $name   Sanitized MCP tool or prompt name.
+	 * @param \WP_Ability $ability The WordPress ability being converted.
+	 * @return string Clean name.
 	 */
-	public function strip_tool_name_prefix( string $tool_name, \WP_Ability $ability ): string {
-		if ( str_starts_with( $tool_name, 'wp-mcp-' ) ) {
-			return substr( $tool_name, 7 );
+	public function strip_name_prefix( string $name, \WP_Ability $ability ): string {
+		if ( str_starts_with( $name, 'wp-mcp-' ) ) {
+			return substr( $name, 7 );
 		}
-		return $tool_name;
-	}
-
-	/**
-	 * Strip the wp-mcp- prefix from MCP prompt names.
-	 *
-	 * @param string      $prompt_name Sanitized MCP prompt name.
-	 * @param \WP_Ability $ability     The WordPress ability being converted.
-	 * @return string Clean prompt name.
-	 */
-	public function strip_prompt_name_prefix( string $prompt_name, \WP_Ability $ability ): string {
-		if ( str_starts_with( $prompt_name, 'wp-mcp-' ) ) {
-			return substr( $prompt_name, 7 );
-		}
-		return $prompt_name;
+		return $name;
 	}
 
 	/**

@@ -111,17 +111,7 @@ class Settings {
 
 			$current_settings = $kit->get_settings();
 			$key = isset( $current_settings['system_colors'] ) ? 'system_colors' : 'custom_colors';
-			$existing = $current_settings[ $key ] ?? array();
-
-			// Merge: update existing by _id, add new ones
-			$existing_map = array();
-			foreach ( $existing as $item ) {
-				$existing_map[ $item['_id'] ] = $item;
-			}
-			foreach ( $colors as $color ) {
-				$existing_map[ $color['_id'] ] = $color;
-			}
-			$updates[ $key ] = array_values( $existing_map );
+			$updates[ $key ] = self::merge_by_id( $current_settings[ $key ] ?? array(), $colors );
 		}
 
 		if ( isset( $input['typography'] ) && is_array( $input['typography'] ) ) {
@@ -154,16 +144,7 @@ class Settings {
 
 			$current_settings = $kit->get_settings();
 			$key = isset( $current_settings['system_typography'] ) ? 'system_typography' : 'custom_typography';
-			$existing = $current_settings[ $key ] ?? array();
-
-			$existing_map = array();
-			foreach ( $existing as $item ) {
-				$existing_map[ $item['_id'] ] = $item;
-			}
-			foreach ( $typographies as $typo ) {
-				$existing_map[ $typo['_id'] ] = $typo;
-			}
-			$updates[ $key ] = array_values( $existing_map );
+			$updates[ $key ] = self::merge_by_id( $current_settings[ $key ] ?? array(), $typographies );
 		}
 
 		if ( empty( $updates ) ) {
@@ -236,5 +217,23 @@ class Settings {
 			'enabled_tools_count'   => count( get_option( 'wp_mcp_enabled_tools', array() ) ),
 			'plugin_version'        => WP_MCP_PLUGIN_VERSION,
 		);
+	}
+
+	/**
+	 * Merge kit items by _id: update existing, add new.
+	 *
+	 * @param array[] $existing Existing kit items.
+	 * @param array[] $incoming New/updated items.
+	 * @return array[] Merged list.
+	 */
+	private static function merge_by_id( array $existing, array $incoming ): array {
+		$map = array();
+		foreach ( $existing as $item ) {
+			$map[ $item['_id'] ] = $item;
+		}
+		foreach ( $incoming as $item ) {
+			$map[ $item['_id'] ] = $item;
+		}
+		return array_values( $map );
 	}
 }

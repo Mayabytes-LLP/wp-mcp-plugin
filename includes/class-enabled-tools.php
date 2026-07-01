@@ -108,12 +108,6 @@ class EnabledTools {
 		$brand_new  = array_values( array_diff( $registered, $roster ) );
 		$stored     = get_option( self::OPTION, false );
 
-		if ( false === $stored ) {
-			update_option( self::OPTION, $registered );
-			update_option( self::ROSTER_OPTION, $registered );
-			return $registered;
-		}
-
 		if ( ! is_array( $stored ) ) {
 			update_option( self::OPTION, $registered );
 			update_option( self::ROSTER_OPTION, $registered );
