@@ -728,7 +728,7 @@ class Element {
 	 * @param array $value
 	 * @return array|null
 	 */
-	private function unwrap_repeater_envelope( array $value ): ?array {
+	private static function unwrap_repeater_envelope( array $value ): ?array {
 		// Already a flat numeric array → not an envelope.
 		if ( array_is_list( $value ) ) {
 			return null;
