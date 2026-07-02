@@ -9,7 +9,6 @@ ehthumbs.db
 *.swo
 *~
 .idea/
-.vscode/*
 !.vscode/settings.json
 .cursor/*
 !.cursor/settings.json
@@ -29,6 +28,6 @@ composer.phar
 node_modules/
 
 # Environment variables
-.env.*
 
 opencode.jsonc
+config.bat
