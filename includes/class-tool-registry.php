@@ -44,8 +44,9 @@ class ToolRegistry {
 				'wp-mcp/visual-compare-preview' => __( 'Preview page for visual comparison', 'wp-mcp-plugin' ),
 			),
 			__( 'Diagnostics', 'wp-mcp-plugin' ) => array(
-				'wp-mcp/get-plugin-status' => __( 'Get plugin status and debug info', 'wp-mcp-plugin' ),
-				'wp-mcp/get-server-guide'    => __( 'Get server workflow and documentation index', 'wp-mcp-plugin' ),
+				'wp-mcp/get-plugin-status'         => __( 'Get plugin status and debug info', 'wp-mcp-plugin' ),
+				'wp-mcp/get-server-guide'          => __( 'Get server workflow and documentation index', 'wp-mcp-plugin' ),
+				'wp-mcp/get-elementor-debug-info'  => __( 'Inspect a page for bad repeater shapes, missing IDs, unknown widgets', 'wp-mcp-plugin' ),
 			),
 		);
 	}

@@ -31,6 +31,7 @@ class Query {
 		$this->register_get_widget_schema();
 		$this->register_list_templates();
 		$this->register_get_global_settings();
+		$this->register_get_elementor_debug_info();
 	}
 
 	/** @return string[] */
@@ -438,6 +439,200 @@ class Query {
 			'typography'      => $settings['custom_typography'],
 			'container_width' => $settings['container_width'] ?? (object) array(),
 			'breakpoints'     => $settings['breakpoints'] ?? (object) array(),
+		);
+	}
+
+	// ── get-elementor-debug-info ──────────────────────────────────────
+
+	private function register_get_elementor_debug_info(): void {
+		$this->ability_names[] = 'wp-mcp/get-elementor-debug-info';
+
+		wp_register_ability( 'wp-mcp/get-elementor-debug-info', array(
+			'label'             => __( 'Get Elementor Debug Info', 'wp-mcp-plugin' ),
+			'description'       => __( 'Read-only introspection of a page\'s _elementor_data: counts of elements/widgets/containers, a tree of element IDs, and any structural problems (repeater envelope shape, missing _id, unknown widget type). Call this BEFORE regenerate-elementor-css fails, or when a tool call returns a bad_repeater_shape error — it gives a structured path to the offending element so you can fix it with update-element. Never read _elementor_data directly: this tool exists for that.', 'wp-mcp-plugin' ),
+			'category'          => 'wp-mcp-plugin',
+			'execute_callback'  => array( $this, 'execute_get_elementor_debug_info' ),
+			'permission_callback' => array( $this, 'check_read_permission' ),
+			'input_schema'      => array(
+				'type'       => 'object',
+				'properties' => array(
+					'post_id' => array(
+						'type'        => 'integer',
+						'description' => 'The page post ID to inspect.',
+					),
+				),
+				'required'             => array( 'post_id' ),
+				'additionalProperties' => false,
+			),
+			'output_schema'     => array(
+				'type'       => 'object',
+				'properties' => array(
+					'post_id'         => array( 'type' => 'integer' ),
+					'element_count'   => array( 'type' => 'integer' ),
+					'widget_count'    => array( 'type' => 'integer' ),
+					'container_count' => array( 'type' => 'integer' ),
+					'tree'            => array(
+						'type'        => 'array',
+						'description' => 'Flattened element map: id → { widgetType|elType, depth, parent_id, child_count }.',
+						'items'       => array( 'type' => 'object' ),
+					),
+					'bad_repeaters'   => array(
+						'type'        => 'array',
+						'description' => 'Repeater fields stored in the wrong shape. Each entry: { element_id, widget_type, field, shape }. Fix by calling update-element with the unwrapped array.',
+						'items'       => array( 'type' => 'object' ),
+					),
+					'missing_ids'     => array(
+						'type'        => 'array',
+						'description' => 'Elements without an `id` field. Elementor usually regenerates these on render but they cause flicker.',
+						'items'       => array( 'type' => 'object' ),
+					),
+					'unknown_widgets' => array(
+						'type'        => 'array',
+						'description' => 'Widget types that Elementor does not currently have registered (deactivated widgets, Pro-only widgets on Pro-less sites).',
+						'items'       => array( 'type' => 'object' ),
+					),
+					'_recommended_resources' => AbilitySchemas::recommended_resources_property(),
+				),
+				'required'   => array( 'post_id', 'element_count', 'widget_count', 'container_count' ),
+			),
+			'meta'              => array(
+				'mcp'         => array( 'public' => true ),
+				'annotations' => AbilitySchemas::annotations( true, false, true ),
+			),
+		) );
+	}
+
+	public function execute_get_elementor_debug_info( array $input ): array|\WP_Error {
+		$post_id = (int) ( $input['post_id'] ?? 0 );
+		if ( $post_id <= 0 ) {
+			return new \WP_Error( 'invalid_post_id', __( 'A positive post_id is required.', 'wp-mcp-plugin' ) );
+		}
+
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return new \WP_Error( 'post_not_found', __( 'Page not found.', 'wp-mcp-plugin' ) );
+		}
+
+		$raw = get_post_meta( $post_id, '_elementor_data', true );
+		if ( empty( $raw ) ) {
+			return array(
+				'post_id'         => $post_id,
+				'element_count'   => 0,
+				'widget_count'    => 0,
+				'container_count' => 0,
+				'tree'            => array(),
+				'bad_repeaters'   => array(),
+				'missing_ids'     => array(),
+				'unknown_widgets' => array(),
+			);
+		}
+
+		$tree = is_array( $raw ) ? $raw : json_decode( (string) $raw, true );
+		if ( ! is_array( $tree ) ) {
+			return new \WP_Error( 'invalid_data', __( '_elementor_data is not a valid JSON array.', 'wp-mcp-plugin' ) );
+		}
+
+		$flat          = array();
+		$bad_repeaters = array();
+		$missing_ids   = array();
+		$widgets_seen  = array();
+		$widget_count  = 0;
+		$container_count = 0;
+
+		$known_widgets = array();
+		if ( class_exists( '\Elementor\Plugin' ) && \Elementor\Plugin::$instance->widgets_manager ) {
+			foreach ( \Elementor\Plugin::$instance->widgets_manager->get_widget_types() as $w ) {
+				$known_widgets[ $w->get_name() ] = true;
+			}
+		}
+
+		$walk = function ( array $nodes, int $depth, ?string $parent_id ) use ( &$walk, &$flat, &$bad_repeaters, &$missing_ids, &$unknown_widgets, &$widgets_seen, &$widget_count, &$container_count, $known_widgets ) {
+			foreach ( $nodes as $node ) {
+				if ( ! is_array( $node ) ) {
+					continue;
+				}
+				$id     = isset( $node['id'] ) ? (string) $node['id'] : '';
+				$etype  = isset( $node['elType'] ) ? (string) $node['elType'] : '';
+				$wtype  = isset( $node['widgetType'] ) ? (string) $node['widgetType'] : '';
+				$child  = isset( $node['elements'] ) && is_array( $node['elements'] ) ? count( $node['elements'] ) : 0;
+
+				if ( '' === $id ) {
+					$missing_ids[] = array(
+						'elType'     => $etype,
+						'widgetType' => $wtype,
+						'parent_id'  => $parent_id,
+					);
+				}
+
+				if ( 'widget' === $etype ) {
+					$widget_count++;
+					$widgets_seen[ $wtype ] = ( $widgets_seen[ $wtype ] ?? 0 ) + 1;
+					if ( $wtype && ! isset( $known_widgets[ $wtype ] ) ) {
+						$unknown_widgets[] = array( 'element_id' => $id, 'widgetType' => $wtype );
+					}
+				} elseif ( 'container' === $etype ) {
+					$container_count++;
+				}
+
+			$settings = isset( $node['settings'] ) && is_array( $node['settings'] ) ? $node['settings'] : array();
+			foreach ( Element::REPEATER_KEYS as $key ) {
+				if ( ! isset( $settings[ $key ] ) || ! is_array( $settings[ $key ] ) ) {
+					continue;
+				}
+				if ( Element::is_envelope_shape( $settings[ $key ] ) ) {
+					$bad_repeaters[] = array(
+						'element_id'  => $id,
+						'widget_type' => $wtype ?: $etype,
+						'field'       => $key,
+						'shape'       => Element::describe_envelope( $settings[ $key ] ),
+					);
+				}
+			}
+
+				if ( '' !== $id ) {
+					$flat[ $id ] = array(
+						'id'         => $id,
+						'elType'     => $etype,
+						'widgetType' => $wtype,
+						'depth'      => $depth,
+						'parent_id'  => $parent_id,
+						'child_count' => $child,
+					);
+				}
+
+				if ( $child > 0 ) {
+					$walk( $node['elements'], $depth + 1, '' !== $id ? $id : null );
+				}
+			}
+		};
+
+		$unknown_widgets = array();
+		$walk( $tree, 0, null );
+
+		// Build the unknown_widgets list now that the walk has populated it.
+		$unknown_list = array();
+		if ( ! empty( $unknown_widgets ) ) {
+			$unknown_list = $unknown_widgets;
+		} elseif ( ! empty( $widgets_seen ) ) {
+			foreach ( $widgets_seen as $w => $cnt ) {
+				if ( $w && ! isset( $known_widgets[ $w ] ) ) {
+					$unknown_list[] = array( 'widgetType' => $w, 'count' => $cnt );
+				}
+			}
+		}
+
+		return AbilitySchemas::with_recommended_resources(
+			array(
+				'post_id'         => $post_id,
+				'element_count'   => count( $flat ),
+				'widget_count'    => $widget_count,
+				'container_count' => $container_count,
+				'tree'            => array_values( $flat ),
+				'bad_repeaters'   => $bad_repeaters,
+				'missing_ids'     => $missing_ids,
+				'unknown_widgets' => $unknown_list,
+			),
+			array( 'wp-mcp://docs/widget-types', 'wp-mcp://docs/elementor-data-structure' )
 		);
 	}
 }

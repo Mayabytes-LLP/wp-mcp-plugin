@@ -132,7 +132,8 @@ class Page {
 
 		// Optionally set initial content
 		if ( ! empty( $input['initial_elementor_data'] ) && is_array( $input['initial_elementor_data'] ) ) {
-			$json = wp_json_encode( $input['initial_elementor_data'] );
+			$sanitized = Element::sanitize_elementor_tree( $input['initial_elementor_data'] );
+			$json      = wp_json_encode( $sanitized );
 			if ( false === $json ) {
 				return new \WP_Error( 'encode_failed', __( 'Failed to encode Elementor data as JSON.', 'wp-mcp-plugin' ) );
 			}
@@ -205,7 +206,8 @@ class Page {
 			return new \WP_Error( 'invalid_data', __( 'elementor_data must be a JSON array.', 'wp-mcp-plugin' ) );
 		}
 
-		$json = wp_json_encode( $input['elementor_data'] );
+		$sanitized = Element::sanitize_elementor_tree( $input['elementor_data'] );
+		$json      = wp_json_encode( $sanitized );
 		if ( false === $json ) {
 			return new \WP_Error( 'encode_failed', __( 'Failed to encode Elementor data as JSON.', 'wp-mcp-plugin' ) );
 		}

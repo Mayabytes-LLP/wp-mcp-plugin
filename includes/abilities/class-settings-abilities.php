@@ -52,10 +52,16 @@ class Settings {
 						'description' => 'Updated custom typography array. Each item: { _id (string), title (string), typography_* properties }.',
 						'items'       => AbilitySchemas::kit_typography_item(),
 					),
+					'settings'          => array(
+						'type'                 => 'object',
+						'description'         => 'Free-form kit settings to merge. Recognised keys: container_width (int/object with size/unit), container_padding, space_between_widgets, page_title_selector, breakpoints (object with w/tablet/mobile_laptop/mobile_extra/mobile). Other keys are saved as-is. See `wp-mcp://docs/global-settings`.',
+						'additionalProperties' => true,
+					),
 				),
 				'anyOf' => array(
 					array( 'required' => array( 'colors' ) ),
 					array( 'required' => array( 'typography' ) ),
+					array( 'required' => array( 'settings' ) ),
 				),
 				'additionalProperties' => false,
 			),
@@ -63,6 +69,11 @@ class Settings {
 				'type'       => 'object',
 				'properties' => array(
 					'success' => array( 'type' => 'boolean' ),
+					'updated' => array(
+						'type'        => 'array',
+						'description' => 'Kit setting keys that were updated.',
+						'items'       => array( 'type' => 'string' ),
+					),
 				),
 				'required'   => array( 'success' ),
 			),
@@ -147,10 +158,42 @@ class Settings {
 			$updates[ $key ] = self::merge_by_id( $current_settings[ $key ] ?? array(), $typographies );
 		}
 
+		if ( isset( $input['settings'] ) && is_array( $input['settings'] ) ) {
+			// Free-form kit field updates. Elementor stores layout / breakpoint
+			// settings directly on the kit (e.g. `container_width`,
+			// `container_padding`, `space_between_widgets`, `breakpoints`).
+			//
+			// `system_colors` / `custom_colors` / `system_typography` /
+			// `custom_typography` are intentionally NOT in the allowlist —
+			// those go through the main `colors` / `typography` branches above
+			// for proper hex validation, _id assignment, and merge semantics.
+			$allowed = array(
+				'container_width',
+				'container_padding',
+				'space_between_widgets',
+				'page_title_selector',
+				'breakpoints',
+				'default_generic_fonts',
+				'lightbox',
+				'page_background',
+				'body_background',
+				'viewport_md',
+				'viewport_lg',
+				'container_width_tablet',
+				'container_width_mobile',
+			);
+			foreach ( $input['settings'] as $key => $value ) {
+				if ( ! in_array( $key, $allowed, true ) ) {
+					continue;
+				}
+				$updates[ $key ] = self::sanitize_kit_setting( $value );
+			}
+		}
+
 		if ( empty( $updates ) ) {
 			return new \WP_Error(
 				'no_updates',
-				__( 'No colors or typography provided for update.', 'wp-mcp-plugin' )
+				__( 'No colors, typography, or settings provided for update.', 'wp-mcp-plugin' )
 			);
 		}
 
@@ -161,7 +204,10 @@ class Settings {
 			return new \WP_Error( 'kit_save_failed', $e->getMessage() );
 		}
 
-		return array( 'success' => true );
+		return array(
+			'success' => true,
+			'updated' => array_keys( $updates ),
+		);
 	}
 
 	private function register_get_plugin_status(): void {
@@ -235,5 +281,55 @@ class Settings {
 			$map[ $item['_id'] ] = $item;
 		}
 		return array_values( $map );
+	}
+
+	/**
+	 * Sanitize a single value from the free-form `settings` object.
+	 *
+	 * Elementor kit settings can be:
+	 *   - scalar (e.g. `page_title_selector: "h1.entry-title"`)
+	 *   - shallow assoc array of strings (e.g. `lightbox: {enabled: "yes"}`)
+	 *   - nested object (e.g. `container_width: {size: 1140, unit: "px"}`,
+	 *     `breakpoints: {w: 1024, tablet: 768, ...}`)
+	 *   - simple indexed list of strings (rare)
+	 *
+	 * The earlier one-level `array_map('sanitize_text_field', $value)` was
+	 * wrong for the nested cases — it stringified integers in `breakpoints`
+	 * and flattened `container_width` to a single-level array. This walks
+	 * the structure recursively and only stringifies leaf values that are
+	 * actually strings; numeric leaves are preserved as-is.
+	 *
+	 * @param mixed $value
+	 * @return mixed
+	 */
+	private static function sanitize_kit_setting( $value ) {
+		if ( is_array( $value ) ) {
+			$is_list = array_is_list( $value );
+			$out     = array();
+			foreach ( $value as $k => $v ) {
+				if ( is_array( $v ) ) {
+					$out[ $is_list ? (int) $k : $k ] = self::sanitize_kit_setting( $v );
+				} elseif ( is_string( $v ) ) {
+					$out[ $is_list ? (int) $k : $k ] = sanitize_text_field( $v );
+				} elseif ( is_numeric( $v ) ) {
+					$out[ $is_list ? (int) $k : $k ] = $v + 0; // int if whole, float otherwise
+				} elseif ( is_bool( $v ) ) {
+					$out[ $is_list ? (int) $k : $k ] = $v;
+				} else {
+					$out[ $is_list ? (int) $k : $k ] = sanitize_textarea_field( (string) $v );
+				}
+			}
+			return $out;
+		}
+		if ( is_string( $value ) ) {
+			return sanitize_text_field( $value );
+		}
+		if ( is_numeric( $value ) ) {
+			return $value + 0;
+		}
+		if ( is_bool( $value ) ) {
+			return $value;
+		}
+		return sanitize_textarea_field( (string) $value );
 	}
 }

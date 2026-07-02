@@ -54,7 +54,10 @@ class Render {
 				. 'update-page-elementor-data. Call this BEFORE visual-compare-preview '
 				. 'whenever the page layout or styling changed — otherwise the preview '
 				. 'may show cached/outdated CSS. Read resource `wp-mcp://docs/workflow` '
-				. 'for the full draft-preview visual comparison loop.',
+				. 'for the full draft-preview visual comparison loop. '
+				. 'If this returns `bad_repeater_shape`, call get-elementor-debug-info '
+				. 'with the same post_id to identify the offending elements, then fix '
+				. 'them with update-element and retry.',
 				'wp-mcp-plugin'
 			),
 			'category'          => 'wp-mcp-plugin',

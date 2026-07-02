@@ -205,7 +205,7 @@ class Element {
 		$container = array(
 			'id'         => $this->generate_id(),
 			'elType'     => 'container',
-			'settings'   => $this->sanitize_settings( $settings ),
+			'settings'   => self::sanitize_settings( $settings ),
 			'elements'   => array(),
 			'isInner'    => false,
 		);
@@ -348,7 +348,7 @@ class Element {
 			'id'         => $this->generate_id(),
 			'elType'     => 'widget',
 			'widgetType' => $widget_type,
-			'settings'   => $this->sanitize_settings( $settings ),
+			'settings'   => self::sanitize_settings( $settings ),
 			'elements'   => array(),
 		);
 
@@ -458,7 +458,7 @@ class Element {
 		}
 
 		$element =& $result['parent'][ $result['index'] ];
-		$element['settings'] = array_merge( $element['settings'] ?? array(), $this->sanitize_settings( $settings ) );
+		$element['settings'] = array_merge( $element['settings'] ?? array(), self::sanitize_settings( $settings ) );
 
 		$this->save_page_data( $post_id, $page_data );
 
@@ -554,16 +554,12 @@ class Element {
 					),
 					'operations' => array(
 						'type'        => 'array',
-						'description' => 'Array of operations. Each operation: { element_id (string), settings (object) }.',
+						'description' => 'Array of operations. Each operation: { element_id (string), settings (object) }. Per-op validation happens in the executor — one bad op is reported in the response `failed[]` array, not the whole batch.',
 						'minItems'    => 1,
 						'maxItems'    => 100,
 						'items'       => array(
-							'type'       => 'object',
-							'properties' => array(
-								'element_id' => array( 'type' => 'string' ),
-								'settings'   => array( 'type' => 'object' ),
-							),
-							'required' => array( 'element_id', 'settings' ),
+							'type'                 => 'object',
+							'additionalProperties' => true,
 						),
 					),
 				),
@@ -633,7 +629,7 @@ class Element {
 			}
 
 			$element =& $result['parent'][ $result['index'] ];
-			$element['settings'] = array_merge( $element['settings'] ?? array(), $this->sanitize_settings( $settings ) );
+			$element['settings'] = array_merge( $element['settings'] ?? array(), self::sanitize_settings( $settings ) );
 			$updated++;
 		}
 
@@ -655,12 +651,171 @@ class Element {
 	// ── Helpers ───────────────────────────────────────────────────────
 
 	/**
+	 * Elementor control keys that store REPEATER values. A repeater is a
+	 * flat 0-indexed array of item-objects. The MCP client (LLM) sometimes
+	 * wraps the array in `{"item":[…]}` (the shape Elementor's own builder
+	 * UI uses to render), which is the wrong on-disk shape — Elementor's
+	 * repeater control reads `$value[0]` as an item, so the envelope makes
+	 * every item `null` and breaks `add_controls_stack_style_rules()` in
+	 * `elementor/core/files/css/base.php`. We unwrap the envelope here so
+	 * any client mistake becomes a save-as-flat-array.
+	 */
+	public const REPEATER_KEYS = array(
+		'icon_list',          // icon-list widget
+		'social_icon_list',   // social-icons widget
+		'tabs',               // accordion / tabs / toggle widgets
+		'list_items',         // icon-box / star-rating / etc.
+		'slides',             // image-carousel / testimonial / slider
+		'gallery',            // image-gallery / basic-gallery
+		'form_fields',        // form widget
+		'menu_items',         // nav-menu widget
+	);
+
+	/**
+	 * Heuristic: a value is an "envelope shape" if it is an associative
+	 * array whose only entry is a single key holding a flat (list-shaped)
+	 * array. Elementor repeater values are flat lists — anything else is
+	 * a sign the LLM wrapped the array in the wrong shape.
+	 *
+	 * Recognised envelopes:
+	 *   - `{"item":[…]}`  /  `{"items":[…]}`   (LLM convenience)
+	 *   - `{"[key]":[…]}` (single-key dict matching the field name)
+	 *
+	 * @param array $value
+	 * @return bool
+	 */
+	public static function is_envelope_shape( array $value ): bool {
+		if ( array_is_list( $value ) ) {
+			return false;
+		}
+		foreach ( array( 'item', 'items' ) as $k ) {
+			if ( isset( $value[ $k ] ) && is_array( $value[ $k ] ) && array_is_list( $value[ $k ] ) ) {
+				return true;
+			}
+		}
+		if ( 1 === count( $value ) ) {
+			$only_val = reset( $value );
+			if ( is_array( $only_val ) && array_is_list( $only_val ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Human-readable description of the envelope shape, for debug output.
+	 *
+	 * @param array $value
+	 * @return string
+	 */
+	public static function describe_envelope( array $value ): string {
+		$keys    = array_keys( $value );
+		$first   = reset( $value );
+		$first_n = is_array( $first ) ? count( $first ) : 0;
+		return sprintf( '{"%s":[…]} (n=%d)', $keys[0] ?? '?', $first_n );
+	}
+
+	/**
+	 * Detect and unwrap a repeater envelope.
+	 *
+	 * Recognised envelope shapes (all indicate "one key holding the array"):
+	 *   - `{"item":[…]}`         (legacy LLM convention; the bug from the session)
+	 *   - `{"items":[…]}`        (plural form)
+	 *   - `{"[key]":[…]}`        (single-key dict where the only key is the field name)
+	 *
+	 * Returns the inner array if an envelope is detected, otherwise null.
+	 *
+	 * @param array $value
+	 * @return array|null
+	 */
+	private function unwrap_repeater_envelope( array $value ): ?array {
+		// Already a flat numeric array → not an envelope.
+		if ( array_is_list( $value ) ) {
+			return null;
+		}
+
+		// `{"item":[…]}` or `{"items":[…]}`.
+		foreach ( array( 'item', 'items' ) as $k ) {
+			if ( isset( $value[ $k ] ) && is_array( $value[ $k ] ) && array_is_list( $value[ $k ] ) ) {
+				return $value[ $k ];
+			}
+		}
+
+		// `{"icon_list":[…]}` — single-key dict matching the field name.
+		if ( 1 === count( $value ) ) {
+			$only_key = array_key_first( $value );
+			$only_val = $value[ $only_key ];
+			if ( is_array( $only_val ) && array_is_list( $only_val ) ) {
+				return $only_val;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Sanitize an entire Elementor element tree. Used by `create-page`
+	 * (initial_elementor_data) and `update-page-elementor-data` — those
+	 * tools bypass `add-widget` / `update-element` and so would otherwise
+	 * persist repeater-envelope shapes verbatim.
+	 *
+	 * Walks `settings` on every node, runs `sanitize_settings()` (which
+	 * unwraps repeater envelopes), and recurses into `elements`. Also
+	 * assigns an `_id` to any node that is missing one.
+	 *
+	 * Public + static so other ability classes (e.g. Page) can call it.
+	 *
+	 * @param array $tree
+	 * @return array
+	 */
+	public static function sanitize_elementor_tree( array $tree ): array {
+		$out = array();
+		foreach ( $tree as $node ) {
+			if ( ! is_array( $node ) ) {
+				continue;
+			}
+			$node['id'] = isset( $node['id'] ) && ! empty( $node['id'] )
+				? (string) $node['id']
+				: substr( bin2hex( random_bytes( 4 ) ), 0, 7 );
+			if ( isset( $node['settings'] ) && is_array( $node['settings'] ) ) {
+				$node['settings'] = self::sanitize_settings( $node['settings'] );
+			}
+			if ( ! empty( $node['elements'] ) && is_array( $node['elements'] ) ) {
+				$node['elements'] = self::sanitize_elementor_tree( $node['elements'] );
+			}
+			$out[] = $node;
+		}
+		return $out;
+	}
+
+	/**
+	 * Sanitize a single repeater item, ensuring it has an `_id`. Elementor
+	 * requires every repeater row to have a unique `_id` (8-char hex) for
+	 * stable DOM keys; absent one, Elementor regenerates it on render, but
+	 * the lack causes flicker on CSS regen.
+	 *
+	 * @param array $item
+	 * @return array
+	 */
+	private static function sanitize_repeater_item( array $item ): array {
+		if ( empty( $item['_id'] ) ) {
+			$item['_id'] = substr( bin2hex( random_bytes( 4 ) ), 0, 8 );
+		}
+		return $item;
+	}
+
+	/**
 	 * Basic settings sanitization: text fields, URLs, and arrays.
+	 *
+	 * For known repeater keys (`icon_list`, `social_icon_list`, `tabs`, …),
+	 * the value is also normalised: any envelope shape
+	 * (`{"item":[…]}`, `{"items":[…]}`, `{"[key]":[…]}`) is unwrapped to a
+	 * flat array, and each item is ensured an `_id`.
 	 *
 	 * @param array $settings
 	 * @return array
 	 */
-	private function sanitize_settings( array $settings ): array {
+	private static function sanitize_settings( array $settings ): array {
 		$sanitized = array();
 		foreach ( $settings as $key => $value ) {
 			if ( is_string( $value ) ) {
@@ -670,7 +825,19 @@ class Element {
 					$sanitized[ $key ] = wp_kses_post( $value );
 				}
 			} elseif ( is_array( $value ) ) {
-				$sanitized[ $key ] = $this->sanitize_settings( $value );
+				if ( in_array( $key, self::REPEATER_KEYS, true ) ) {
+					$unwrapped      = self::unwrap_repeater_envelope( $value );
+					$repeater_value = $unwrapped ?? $value;
+					$items          = array();
+					foreach ( $repeater_value as $item ) {
+						if ( is_array( $item ) ) {
+							$items[] = self::sanitize_repeater_item( self::sanitize_settings( $item ) );
+						}
+					}
+					$sanitized[ $key ] = $items;
+				} else {
+					$sanitized[ $key ] = self::sanitize_settings( $value );
+				}
 			} elseif ( is_numeric( $value ) ) {
 				$sanitized[ $key ] = $value;
 			} elseif ( is_bool( $value ) ) {
