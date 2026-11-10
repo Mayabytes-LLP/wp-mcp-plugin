@@ -9,7 +9,7 @@
     "**/.git/**",
     "**/vendor/**/vendor/**"
   ],
-  "task.allowAutomaticTasks": true,
+  "task.allowAutomaticTasks": "off",
   "debug.openDebug": "neverOpen",
   "terminal.integrated.inheritEnv": false,
   "tasks": {
